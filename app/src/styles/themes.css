@@ -1,0 +1,62 @@
+/* Theme Variables */
+:root[data-theme='dark'],
+:root {
+  /* Primary Background */
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-tertiary: #25253d;
+
+  /* Traditional Japanese Accents */
+  --accent-sakura: #ffc0d3;
+  --accent-matcha: #b8d4a8;
+  --accent-indigo: #7986cb;
+  --accent-gold: #e8c547;
+
+  /* Text */
+  --text-primary: #f5f5f7;
+  --text-secondary: #b8b8c8;
+  --text-tertiary: #8585a0;
+
+  /* Semantic Colors */
+  --success: #4caf7d;
+  --error: #f44336;
+  --warning: #ff9800;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme='light'] {
+  /* Primary Background */
+  --bg-primary: #fafafa;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0f0f5;
+
+  /* Traditional Japanese Accents */
+  --accent-sakura: #ff4081;
+  --accent-matcha: #689f38;
+  --accent-indigo: #3f51b5;
+  --accent-gold: #ffc107;
+
+  /* Text */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-tertiary: #757575;
+
+  /* Semantic Colors */
+  --success: #2e7d32;
+  --error: #d32f2f;
+  --warning: #f57c00;
+
+  /* Borders & Dividers */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.15);
+}
+
+/* Apply theme colors to body */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
