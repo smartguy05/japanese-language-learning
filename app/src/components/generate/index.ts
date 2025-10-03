@@ -1,0 +1,1 @@
+export { WordGenerator } from './WordGenerator';

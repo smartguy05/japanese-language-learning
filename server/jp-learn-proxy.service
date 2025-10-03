@@ -1,0 +1,21 @@
+[Unit]
+Description=Japanese Learning PWA - Claude API Proxy Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/jp-learn-server
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=jp-learn-proxy
+
+# Environment variables (optional)
+Environment=NODE_ENV=production
+Environment=PORT=3001
+
+[Install]
+WantedBy=multi-user.target

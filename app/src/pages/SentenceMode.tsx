@@ -1,9 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useWords } from '../contexts/WordContext';
 import { useProgress } from '../contexts/ProgressContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Card, Button, Select } from '../components/common';
 import { SentenceStudyView } from '../components/sentence/SentenceStudyView';
 import { SentenceQuizView } from '../components/sentence/SentenceQuizView';
+import { WordGenerator } from '../components/generate';
 
 type View = 'selection' | 'study' | 'quiz' | 'results';
 type FilterType = 'all' | 'day' | 'needsReview';
@@ -11,6 +13,7 @@ type FilterType = 'all' | 'day' | 'needsReview';
 export function SentenceMode() {
   const { words } = useWords();
   const { progress } = useProgress();
+  const { hasApiKey } = useSettings();
 
   const [view, setView] = useState<View>('selection');
   const [filterType, setFilterType] = useState<FilterType>('day');
@@ -63,6 +66,11 @@ export function SentenceMode() {
   if (view === 'selection') {
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-6">
+        {/* Sentence Generator - Only visible if API key is set */}
+        {hasApiKey && (
+          <WordGenerator type="sentence" currentDay={selectedDay} />
+        )}
+
         <Card variant="elevated" padding="large">
           <h1 className="text-2xl font-bold text-text-primary mb-4">Sentence Mode</h1>
           <p className="text-text-secondary mb-6">

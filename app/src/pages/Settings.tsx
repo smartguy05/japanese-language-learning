@@ -1,12 +1,20 @@
-import { Card, Button } from '../components/common';
+import { useState } from 'react';
+import { Card, Button, Input } from '../components/common';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWords } from '../contexts/WordContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
+import { validateApiKey } from '../utils/claudeApi';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { exportData, clearAllData, bulkAddWords, words } = useWords();
+  const { settings, updateSettings } = useSettings();
+
+  const [apiKeyInput, setApiKeyInput] = useState(settings.claudeApiKey || '');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState('');
 
   const handleExport = () => {
     const data = exportData();
@@ -28,6 +36,30 @@ export function Settings() {
     }
   };
 
+  const handleSaveApiKey = () => {
+    if (!apiKeyInput.trim()) {
+      updateSettings({ claudeApiKey: null });
+      setApiKeyError('');
+      return;
+    }
+
+    if (!validateApiKey(apiKeyInput)) {
+      setApiKeyError('Invalid API key format. Must start with "sk-ant-" and be at least 20 characters.');
+      return;
+    }
+
+    updateSettings({ claudeApiKey: apiKeyInput });
+    setApiKeyError('');
+  };
+
+  const handleClearApiKey = () => {
+    if (confirm('Remove Claude API key from settings?')) {
+      setApiKeyInput('');
+      updateSettings({ claudeApiKey: null });
+      setApiKeyError('');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
       <h1 className="text-2xl font-bold text-text-primary mb-6">Settings</h1>
@@ -43,6 +75,54 @@ export function Settings() {
           <Button onClick={toggleTheme} variant="secondary">
             Switch to {theme === 'dark' ? 'Light' : 'Dark'} Mode
           </Button>
+        </div>
+      </Card>
+
+      {/* AI Integration */}
+      <Card variant="default" padding="large" className="mb-6">
+        <h2 className="text-xl font-semibold text-text-primary mb-4">AI Integration</h2>
+        <div className="space-y-4">
+          <div>
+            <p className="text-text-primary font-medium mb-2">Claude API Key</p>
+            <p className="text-text-secondary text-sm mb-3">
+              Add your Claude API key to generate new Japanese words and sentences on-demand
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Input
+                type={showApiKey ? 'text' : 'password'}
+                placeholder="sk-ant-api03-..."
+                value={apiKeyInput}
+                onChange={(e) => {
+                  setApiKeyInput(e.target.value);
+                  setApiKeyError('');
+                }}
+                className="flex-1"
+              />
+              <Button
+                onClick={() => setShowApiKey(!showApiKey)}
+                variant="secondary"
+                size="small"
+              >
+                {showApiKey ? 'Hide' : 'Show'}
+              </Button>
+            </div>
+            {apiKeyError && (
+              <p className="text-error text-sm mb-2">{apiKeyError}</p>
+            )}
+            <div className="flex gap-2">
+              <Button onClick={handleSaveApiKey} variant="primary" size="small">
+                Save API Key
+              </Button>
+              {settings.claudeApiKey && (
+                <Button onClick={handleClearApiKey} variant="secondary" size="small">
+                  Clear API Key
+                </Button>
+              )}
+            </div>
+            {settings.claudeApiKey && !apiKeyError && (
+              <p className="text-success text-sm mt-2">✓ API key saved</p>
+            )}
+          </div>
         </div>
       </Card>
 
