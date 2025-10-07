@@ -33,15 +33,19 @@ export function AlphabetMode() {
       ? words.filter(w => w.type === 'word' || w.type === 'sentence')
       : words.filter(w => w.type === 'word');
 
+    let filtered;
     if (filterType === 'all') {
-      return typeFilter;
+      filtered = typeFilter;
     } else if (filterType === 'day') {
-      return typeFilter.filter(w => w.day === selectedDay);
+      filtered = typeFilter.filter(w => w.day === selectedDay);
     } else if (filterType === 'needsReview') {
-      return typeFilter.filter(w => w.needsReview);
+      filtered = typeFilter.filter(w => w.needsReview);
+    } else {
+      filtered = typeFilter;
     }
 
-    return typeFilter;
+    // Shuffle the filtered words for random order
+    return [...filtered].sort(() => Math.random() - 0.5);
   }, [words, filterType, selectedDay, includeSentences]);
 
   const handleStartStudy = () => {
