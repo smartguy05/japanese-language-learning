@@ -10,6 +10,9 @@ const defaultSettings: AppSettings = {
   flashcardDirection: 'japaneseToEnglish',
   showStudyModeByDefault: false,
   claudeApiKey: null,
+  claudeModel: null,
+  cachedModels: [],
+  lastModelsFetch: null,
   lastExportDate: null,
   dataVersion: '1.0',
 };

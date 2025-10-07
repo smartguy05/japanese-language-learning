@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react';
-import { Card, Button, Input, Toast, ToastType } from '../components/common';
+import { useState, useRef, useEffect } from 'react';
+import { Card, Button, Input, Toast, ToastType, Select } from '../components/common';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWords } from '../contexts/WordContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
-import { validateApiKey } from '../utils/claudeApi';
+import { validateApiKey, fetchAnthropicModels, AnthropicModel } from '../utils/claudeApi';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -20,6 +20,7 @@ export function Settings() {
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -43,9 +44,9 @@ export function Settings() {
     }
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     if (!apiKeyInput.trim()) {
-      updateSettings({ claudeApiKey: null });
+      updateSettings({ claudeApiKey: null, claudeModel: null, cachedModels: [] });
       setApiKeyError('');
       return;
     }
@@ -55,16 +56,84 @@ export function Settings() {
       return;
     }
 
-    updateSettings({ claudeApiKey: apiKeyInput });
-    setApiKeyError('');
+    // Fetch models when saving a new API key
+    setIsLoadingModels(true);
+    try {
+      const models = await fetchAnthropicModels(apiKeyInput);
+      const defaultModel = models.length > 0 ? models[0].id : null;
+      updateSettings({
+        claudeApiKey: apiKeyInput,
+        claudeModel: defaultModel,
+        cachedModels: models,
+        lastModelsFetch: new Date().toISOString()
+      });
+      setApiKeyError('');
+      setToast({ message: `API key saved! ${models.length} models loaded.`, type: 'success' });
+    } catch (error) {
+      setApiKeyError(error instanceof Error ? error.message : 'Failed to fetch models');
+      setToast({ message: 'API key saved but failed to load models', type: 'error' });
+      // Still save the API key even if model fetch fails
+      updateSettings({ claudeApiKey: apiKeyInput });
+    } finally {
+      setIsLoadingModels(false);
+    }
   };
 
   const handleClearApiKey = () => {
     if (confirm('Remove Claude API key from settings?')) {
       setApiKeyInput('');
-      updateSettings({ claudeApiKey: null });
+      updateSettings({ claudeApiKey: null, claudeModel: null, cachedModels: [], lastModelsFetch: null });
       setApiKeyError('');
     }
+  };
+
+  const shouldRefreshModels = (): boolean => {
+    if (!settings.lastModelsFetch) return true;
+
+    const lastFetch = new Date(settings.lastModelsFetch);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    return lastFetch < oneWeekAgo;
+  };
+
+  const handleModelDropdownClick = async () => {
+    if (!settings.claudeApiKey || !shouldRefreshModels()) return;
+
+    setIsLoadingModels(true);
+    try {
+      const models = await fetchAnthropicModels(settings.claudeApiKey);
+      updateSettings({
+        cachedModels: models,
+        lastModelsFetch: new Date().toISOString()
+      });
+    } catch (error) {
+      setToast({ message: 'Failed to refresh models', type: 'error' });
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const handleRefreshModels = async () => {
+    if (!settings.claudeApiKey) return;
+
+    setIsLoadingModels(true);
+    try {
+      const models = await fetchAnthropicModels(settings.claudeApiKey);
+      updateSettings({
+        cachedModels: models,
+        lastModelsFetch: new Date().toISOString()
+      });
+      setToast({ message: `Models refreshed! ${models.length} models loaded.`, type: 'success' });
+    } catch (error) {
+      setToast({ message: 'Failed to refresh models', type: 'error' });
+    } finally {
+      setIsLoadingModels(false);
+    }
+  };
+
+  const handleModelChange = (modelId: string) => {
+    updateSettings({ claudeModel: modelId });
   };
 
   const handleImportClick = () => {
@@ -208,6 +277,56 @@ export function Settings() {
               <p className="text-success text-sm mt-2">✓ API key saved</p>
             )}
           </div>
+
+          {/* Model Selection - Only show if API key is saved */}
+          {settings.claudeApiKey && (
+            <div>
+              <p className="text-text-primary font-medium mb-2">Claude Model</p>
+              <p className="text-text-secondary text-sm mb-3">
+                Select which Claude model to use for generating words and sentences
+              </p>
+              <div className="flex gap-2">
+                <Select
+                  value={settings.claudeModel || ''}
+                  onChange={(e) => handleModelChange(e.target.value)}
+                  onClick={handleModelDropdownClick}
+                  disabled={isLoadingModels}
+                  className="flex-1"
+                >
+                  {isLoadingModels ? (
+                    <option>Loading models...</option>
+                  ) : settings.cachedModels && settings.cachedModels.length > 0 ? (
+                    settings.cachedModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.display_name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">No models available</option>
+                  )}
+                </Select>
+                <Button
+                  onClick={handleRefreshModels}
+                  variant="secondary"
+                  size="small"
+                  disabled={isLoadingModels}
+                  title="Refresh model list"
+                >
+                  ↻
+                </Button>
+              </div>
+              {settings.claudeModel && (
+                <p className="text-text-secondary text-xs mt-2">
+                  Selected: {settings.cachedModels?.find(m => m.id === settings.claudeModel)?.display_name || settings.claudeModel}
+                </p>
+              )}
+              {settings.lastModelsFetch && (
+                <p className="text-text-tertiary text-xs mt-1">
+                  Last updated: {new Date(settings.lastModelsFetch).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </Card>
 

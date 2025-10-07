@@ -62,6 +62,7 @@ export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
         type,
         existingWords: words,
         currentDay: selectedDay,
+        model: settings.claudeModel || undefined,
       });
 
       bulkAddWords(generatedWords as Word[]);
