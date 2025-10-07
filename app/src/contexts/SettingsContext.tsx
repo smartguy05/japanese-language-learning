@@ -31,6 +31,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setItem(STORAGE_KEY, settings);
   }, [settings]);
 
+  // Listen for settings import events
+  useEffect(() => {
+    const handleSettingsImport = () => {
+      const importedSettings = getItem<AppSettings>(STORAGE_KEY, defaultSettings);
+      setSettings(importedSettings);
+    };
+
+    window.addEventListener('settings-imported', handleSettingsImport);
+    return () => window.removeEventListener('settings-imported', handleSettingsImport);
+  }, []);
+
   const updateSettings = (updates: Partial<AppSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
   };

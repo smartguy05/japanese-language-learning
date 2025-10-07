@@ -1,20 +1,23 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, Button, Input } from '../components/common';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWords } from '../contexts/WordContext';
 import { useSettings } from '../contexts/SettingsContext';
-import { downloadJSON } from '../utils/importExport';
+import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
 import { validateApiKey } from '../utils/claudeApi';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
-  const { exportData, clearAllData, bulkAddWords, words } = useWords();
+  const { exportData, clearAllData, bulkAddWords, words, importData: importWordData } = useWords();
   const { settings, updateSettings } = useSettings();
 
   const [apiKeyInput, setApiKeyInput] = useState(settings.claudeApiKey || '');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeyError, setApiKeyError] = useState('');
+  const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
     const data = exportData();
@@ -57,6 +60,47 @@ export function Settings() {
       setApiKeyInput('');
       updateSettings({ claudeApiKey: null });
       setApiKeyError('');
+    }
+  };
+
+  const handleImportClick = () => {
+    setImportError('');
+    setImportSuccess(false);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const result = importData(text);
+
+      if (!result.success) {
+        setImportError(result.errors?.join(', ') || 'Import failed');
+        setImportSuccess(false);
+        return;
+      }
+
+      if (result.data) {
+        importWordData(result.data);
+        setImportSuccess(true);
+        setImportError('');
+
+        // Update API key input to reflect imported settings
+        setTimeout(() => {
+          setApiKeyInput(settings.claudeApiKey || '');
+        }, 100);
+      }
+    } catch (error) {
+      setImportError('Failed to read file');
+      setImportSuccess(false);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -133,11 +177,36 @@ export function Settings() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-text-primary font-medium">Export Data</p>
-              <p className="text-text-secondary text-sm">Download your words and progress as JSON</p>
+              <p className="text-text-secondary text-sm">Download your words, progress, and settings as JSON</p>
             </div>
             <Button onClick={handleExport} variant="secondary">
               Export
             </Button>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-text-primary font-medium">Import Data</p>
+                <p className="text-text-secondary text-sm">Restore from a previously exported JSON file</p>
+              </div>
+              <Button onClick={handleImportClick} variant="secondary">
+                Import
+              </Button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            {importError && (
+              <p className="text-error text-sm mt-2">✗ {importError}</p>
+            )}
+            {importSuccess && (
+              <p className="text-success text-sm mt-2">✓ Data imported successfully</p>
+            )}
           </div>
 
           <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Word, ExportData } from '../types';
+import type { Word, ExportData, UserProgress, AppSettings } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 import { validateWord } from '../utils/validation';
@@ -105,7 +105,30 @@ export function WordProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const importData = useCallback((data: ExportData) => {
+    // Import words
     setWords(data.data.words);
+
+    // Import progress if available
+    if (data.data.progress) {
+      setItem(STORAGE_KEYS.PROGRESS, data.data.progress);
+    }
+
+    // Import settings if available (excluding theme which is managed separately)
+    if (data.data.settings) {
+      const currentSettings = getItem<AppSettings>(STORAGE_KEYS.SETTINGS, {});
+      const { theme: currentTheme } = currentSettings;
+
+      // Merge imported settings while preserving current theme
+      const mergedSettings = {
+        ...data.data.settings,
+        theme: currentTheme || 'dark',
+      };
+
+      setItem(STORAGE_KEYS.SETTINGS, mergedSettings);
+
+      // Dispatch custom event to notify SettingsContext of the change
+      window.dispatchEvent(new CustomEvent('settings-imported'));
+    }
   }, []);
 
   const exportData = useCallback((): ExportData => {
