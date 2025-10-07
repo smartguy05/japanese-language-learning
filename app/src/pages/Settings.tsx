@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Card, Button, Input } from '../components/common';
+import { Card, Button, Input, Toast, ToastType } from '../components/common';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWords } from '../contexts/WordContext';
+import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
@@ -10,6 +11,7 @@ import { validateApiKey } from '../utils/claudeApi';
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
   const { exportData, clearAllData, bulkAddWords, words, importData: importWordData } = useWords();
+  const { resetAllProgress } = useProgress();
   const { settings, updateSettings } = useSettings();
 
   const [apiKeyInput, setApiKeyInput] = useState(settings.claudeApiKey || '');
@@ -17,6 +19,7 @@ export function Settings() {
   const [apiKeyError, setApiKeyError] = useState('');
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {
@@ -35,6 +38,7 @@ export function Settings() {
     if (confirm('This will delete ALL data. This cannot be undone. Are you sure?')) {
       if (confirm('Really delete everything? This is your last chance to cancel.')) {
         clearAllData();
+        resetAllProgress();
       }
     }
   };
@@ -73,29 +77,66 @@ export function Settings() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    let text: string;
+
+    // Step 1: Read file
     try {
-      const text = await file.text();
-      const result = importData(text);
-
-      if (!result.success) {
-        setImportError(result.errors?.join(', ') || 'Import failed');
-        setImportSuccess(false);
-        return;
-      }
-
-      if (result.data) {
-        importWordData(result.data);
-        setImportSuccess(true);
-        setImportError('');
-
-        // Update API key input to reflect imported settings
-        setTimeout(() => {
-          setApiKeyInput(settings.claudeApiKey || '');
-        }, 100);
-      }
+      text = await file.text();
     } catch (error) {
       setImportError('Failed to read file');
       setImportSuccess(false);
+      setToast({ message: 'Failed to read file', type: 'error' });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Step 2: Parse and validate
+    const result = importData(text);
+
+    if (!result.success) {
+      setImportError(result.errors?.join(', ') || 'Import failed');
+      setImportSuccess(false);
+      setToast({ message: `Import failed: ${result.errors?.join(', ')}`, type: 'error' });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    // Step 3: Import data
+    if (!result.data) {
+      setImportError('No data to import');
+      setImportSuccess(false);
+      setToast({ message: 'No data to import', type: 'error' });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    try {
+      const wordCount = result.data.data.words.length;
+
+      importWordData(result.data);
+      setImportSuccess(true);
+      setImportError('');
+
+      // Show success toast
+      setToast({
+        message: `Successfully imported ${wordCount} word${wordCount !== 1 ? 's' : ''} and settings!`,
+        type: 'success'
+      });
+
+      // Update API key input to reflect imported settings
+      setTimeout(() => {
+        setApiKeyInput(settings.claudeApiKey || '');
+      }, 100);
+    } catch (error) {
+      setImportError('Failed to import data');
+      setImportSuccess(false);
+      setToast({ message: `Failed to import data: ${error instanceof Error ? error.message : 'Unknown error'}`, type: 'error' });
     }
 
     // Reset file input
@@ -247,6 +288,15 @@ export function Settings() {
           • Completely offline-first with no backend
         </p>
       </Card>
+
+      {/* Toast notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
