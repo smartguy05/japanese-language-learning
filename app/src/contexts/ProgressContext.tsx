@@ -13,6 +13,7 @@ interface ProgressContextValue {
   getAccuracyRate: (mode?: Mode) => number;
   updateCurrentDay: (day: number) => void;
   updateStats: (stats: Partial<UserProgress>) => void;
+  resetAllProgress: () => void;
 }
 
 const ProgressContext = createContext<ProgressContextValue | undefined>(undefined);
@@ -115,6 +116,10 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const resetAllProgress = useCallback(() => {
+    setProgress(DEFAULT_PROGRESS);
+  }, []);
+
   return (
     <ProgressContext.Provider
       value={{
@@ -127,6 +132,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
         getAccuracyRate,
         updateCurrentDay,
         updateStats,
+        resetAllProgress,
       }}
     >
       {children}

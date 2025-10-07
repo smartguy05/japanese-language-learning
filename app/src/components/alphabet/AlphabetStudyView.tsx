@@ -1,5 +1,6 @@
 import { Word } from '../../types/word';
-import { Card, Button } from '../common';
+import { Card, Button, SpeakerButton } from '../common';
+import { useSpeech } from '../../hooks/useSpeech';
 
 interface AlphabetStudyViewProps {
   words: Word[];
@@ -8,6 +9,8 @@ interface AlphabetStudyViewProps {
 }
 
 export function AlphabetStudyView({ words, onStartQuiz, onBack }: AlphabetStudyViewProps) {
+  const { speak, isSpeaking } = useSpeech();
+
   if (words.length === 0) {
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -47,20 +50,31 @@ export function AlphabetStudyView({ words, onStartQuiz, onBack }: AlphabetStudyV
               padding="medium"
               className="hover:shadow-lg transition-shadow"
             >
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">Japanese</p>
-                  <p className="text-2xl font-japanese text-text-primary">{word.japanese}</p>
-                </div>
+              <div className="flex items-start gap-3">
+                <SpeakerButton
+                  text={word.japanese}
+                  onSpeak={speak}
+                  isSpeaking={isSpeaking}
+                  variant="ghost"
+                  size="small"
+                  className="mt-1"
+                />
 
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">Romanji</p>
-                  <p className="text-lg text-text-secondary font-mono">{word.romanji}</p>
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1">
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">Japanese</p>
+                    <p className="text-2xl font-japanese text-text-primary">{word.japanese}</p>
+                  </div>
 
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">English</p>
-                  <p className="text-lg text-text-primary">{word.english}</p>
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">Romanji</p>
+                    <p className="text-lg text-text-secondary font-mono">{word.romanji}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">English</p>
+                    <p className="text-lg text-text-primary">{word.english}</p>
+                  </div>
                 </div>
               </div>
 

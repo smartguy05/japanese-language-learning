@@ -7,6 +7,7 @@ interface GenerateWordsParams {
   type: 'word' | 'sentence';
   existingWords: Word[];
   currentDay: number;
+  model?: string;
 }
 
 interface ClaudeResponse {
@@ -16,8 +17,57 @@ interface ClaudeResponse {
   }>;
 }
 
+export interface AnthropicModel {
+  id: string;
+  display_name: string;
+  type: string;
+  created_at: string;
+}
+
+interface ModelsResponse {
+  data: AnthropicModel[];
+  has_more: boolean;
+  first_id: string | null;
+  last_id: string | null;
+}
+
+export async function fetchAnthropicModels(apiKey: string): Promise<AnthropicModel[]> {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `API request failed: ${response.statusText}`);
+    }
+
+    const data: ModelsResponse = await response.json();
+
+    // Filter to get only the 5 latest models with unique display_name
+    const uniqueModels = new Map<string, AnthropicModel>();
+    for (const model of data.data) {
+      if (!uniqueModels.has(model.display_name)) {
+        uniqueModels.set(model.display_name, model);
+      }
+    }
+
+    return Array.from(uniqueModels.values()).slice(0, 5);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch models: ${error.message}`);
+    }
+    throw new Error('Failed to fetch models: Unknown error');
+  }
+}
+
 export async function generateWordsWithClaude(params: GenerateWordsParams): Promise<Omit<Word, 'id' | 'createdAt'>[]> {
-  const { apiKey, count, difficulty, type, existingWords, currentDay } = params;
+  const { apiKey, count, difficulty, type, existingWords, currentDay, model = 'claude-sonnet-4-20250514' } = params;
 
   // Build context from existing words to avoid duplicates
   const existingJapanese = existingWords.map(w => w.japanese).join(', ');
@@ -81,17 +131,19 @@ Example format:
 ]`;
 
   try {
-    // Use proxy server to avoid CORS issues
-    const response = await fetch('http://localhost:3001/api/generate', {
+    // Direct API call with CORS support
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        apiKey,
-        prompt,
-        model: 'claude-sonnet-4-20250514',
-        maxTokens: 2048
+        model,
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, Button, Input } from '../common';
+import { useState, useMemo } from 'react';
+import { Card, Button, Input, Select } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useWords } from '../../contexts/WordContext';
 import { generateWordsWithClaude } from '../../utils/claudeApi';
@@ -14,11 +14,27 @@ export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
   const { settings } = useSettings();
   const { words, bulkAddWords } = useWords();
 
+  // Calculate available days and next day
+  const { availableDays, nextDay } = useMemo(() => {
+    const days = Array.from(new Set(words.map(w => w.day))).sort((a, b) => a - b);
+    const maxDay = days.length > 0 ? Math.max(...days) : 0;
+    return {
+      availableDays: days,
+      nextDay: maxDay + 1
+    };
+  }, [words]);
+
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState(3);
+  const [selectedDay, setSelectedDay] = useState(nextDay);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Update selectedDay when nextDay changes
+  useMemo(() => {
+    setSelectedDay(nextDay);
+  }, [nextDay]);
 
   const difficultyLabels = [
     'Absolute Beginner',
@@ -45,11 +61,12 @@ export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
         difficulty,
         type,
         existingWords: words,
-        currentDay,
+        currentDay: selectedDay,
+        model: settings.claudeModel || undefined,
       });
 
       bulkAddWords(generatedWords as Word[]);
-      setSuccessMessage(`Successfully generated ${generatedWords.length} ${type}${generatedWords.length !== 1 ? 's' : ''}!`);
+      setSuccessMessage(`Successfully generated ${generatedWords.length} ${type}${generatedWords.length !== 1 ? 's' : ''} for Day ${selectedDay}!`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate words');
     } finally {
@@ -64,6 +81,34 @@ export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
       </h2>
 
       <div className="space-y-4">
+        {/* Day Selection */}
+        <div>
+          <label className="block text-text-primary font-medium mb-2">
+            Add to Day
+          </label>
+          <Select
+            value={selectedDay.toString()}
+            onChange={(e) => setSelectedDay(Number(e.target.value))}
+          >
+            <option value={nextDay.toString()}>Day {nextDay} (New Day)</option>
+            {availableDays.length > 0 && (
+              <optgroup label="Existing Days">
+                {availableDays.map(day => (
+                  <option key={day} value={day.toString()}>
+                    Day {day}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </Select>
+          <p className="text-xs text-text-secondary mt-1">
+            {selectedDay === nextDay
+              ? 'Generated items will be added to a new day'
+              : `Generated items will be added to existing Day ${selectedDay}`
+            }
+          </p>
+        </div>
+
         {/* Count Input */}
         <div>
           <label className="block text-text-primary font-medium mb-2">
@@ -124,7 +169,6 @@ export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
 
         <p className="text-text-secondary text-xs">
           Note: Generated {type}s will use only hiragana (ひらがな) or katakana (カタカナ) - no kanji.
-          They will be added to Day {currentDay}.
         </p>
       </div>
     </Card>

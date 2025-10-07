@@ -1,4 +1,5 @@
 import { Word } from '../types/word';
+import * as wanakana from 'wanakana';
 
 export interface CharacterMap {
   japanese: string;
@@ -9,149 +10,50 @@ export interface CharacterMap {
 
 /**
  * Maps each Japanese character to its romanji equivalent for the alphabet mode reveal system
+ * Uses WanaKana to intelligently map Japanese characters (including compounds like きょ)
  */
 export function generateCharacterMap(word: Word): CharacterMap[] {
-  const japaneseChars = Array.from(word.japanese);
-  const romanjiParts = word.romanji.split(' ');
-
-  // Handle case where romanji might not have spaces (single word)
-  if (romanjiParts.length === 1 && japaneseChars.length > 1) {
-    // Try to split romanji by character boundaries
-    return splitRomanjiByCharacter(japaneseChars, word.romanji);
-  }
-
-  // If we have multiple words, split by spaces
-  if (romanjiParts.length > 1) {
-    return mapMultipleWords(japaneseChars, romanjiParts, word.japanese);
-  }
-
-  // Single character or simple word
-  return japaneseChars.map((char, index) => ({
-    japanese: char,
-    romanji: word.romanji,
-    revealed: false,
-    index,
-  }));
-}
-
-/**
- * Splits romanji by character for continuous romanji strings
- * Uses common patterns for hiragana/katakana romanization
- */
-function splitRomanjiByCharacter(japaneseChars: string[], romanji: string): CharacterMap[] {
   const result: CharacterMap[] = [];
-  let romanjiIndex = 0;
-
-  japaneseChars.forEach((char, index) => {
-    // Detect compound characters (digraphs like きゃ, しょ, etc.)
-    const isSmallKana = ['ゃ', 'ゅ', 'ょ', 'ャ', 'ュ', 'ョ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ'].includes(char);
-
-    if (isSmallKana && result.length > 0) {
-      // Combine with previous character
-      const prevChar = result[result.length - 1];
-      const combinedRomanji = extractNextRomanjiPart(romanji, romanjiIndex, true);
-      result[result.length - 1] = {
-        ...prevChar,
-        japanese: prevChar.japanese + char,
-        romanji: combinedRomanji,
-      };
-      romanjiIndex += combinedRomanji.length;
-    } else {
-      // Regular character
-      const romanjiPart = extractNextRomanjiPart(romanji, romanjiIndex, false);
-      result.push({
-        japanese: char,
-        romanji: romanjiPart,
-        revealed: false,
-        index,
-      });
-      romanjiIndex += romanjiPart.length;
-    }
-  });
-
-  return result;
-}
-
-/**
- * Extracts the next romanji segment from the romanji string
- */
-function extractNextRomanjiPart(romanji: string, startIndex: number, isCompound: boolean): string {
-  if (startIndex >= romanji.length) return '';
-
-  // Common romanji patterns
-  const remaining = romanji.substring(startIndex);
-
-  // Two-character romanji (chi, shi, tsu, etc.)
-  const twoCharPatterns = /^(ch|sh|ts|ky|gy|ny|hy|by|py|my|ry)/i;
-  const twoCharMatch = remaining.match(twoCharPatterns);
-  if (twoCharMatch) {
-    // For compounds, might need an additional vowel
-    if (isCompound && remaining.length > 2) {
-      const vowel = remaining[2];
-      if (['a', 'i', 'u', 'e', 'o'].includes(vowel.toLowerCase())) {
-        return twoCharMatch[0] + vowel;
-      }
-    }
-    return twoCharMatch[0];
-  }
-
-  // Single consonant + vowel (ka, ki, ku, etc.)
-  const singleCharWithVowel = /^[a-z][aeiou]/i;
-  const singleMatch = remaining.match(singleCharWithVowel);
-  if (singleMatch) {
-    return singleMatch[0];
-  }
-
-  // Single vowel
-  if (['a', 'i', 'u', 'e', 'o'].includes(remaining[0].toLowerCase())) {
-    return remaining[0];
-  }
-
-  // Single consonant 'n'
-  if (remaining[0].toLowerCase() === 'n') {
-    return 'n';
-  }
-
-  // Fallback to single character
-  return remaining[0];
-}
-
-/**
- * Maps multiple Japanese words to their romanji equivalents
- */
-function mapMultipleWords(
-  japaneseChars: string[],
-  romanjiParts: string[],
-  fullJapanese: string
-): CharacterMap[] {
-  const result: CharacterMap[] = [];
-  const words = fullJapanese.split(/\s+/);
-
+  const japanese = word.japanese;
   let charIndex = 0;
-  words.forEach((word, wordIndex) => {
-    const wordChars = Array.from(word);
-    const romanjiPart = romanjiParts[wordIndex] || '';
 
-    // For each word, create character maps
-    const wordMap = splitRomanjiByCharacter(wordChars, romanjiPart);
+  // Process character by character, detecting compounds
+  for (let i = 0; i < japanese.length; i++) {
+    const char = japanese[i];
 
-    wordMap.forEach((charMap) => {
-      result.push({
-        ...charMap,
-        index: charIndex++,
-      });
-    });
-
-    // Add space character if not last word
-    if (wordIndex < words.length - 1) {
+    // Handle spaces
+    if (char === ' ' || char === '　') {
       result.push({
         japanese: ' ',
         romanji: ' ',
-        revealed: true, // Spaces are always revealed
+        revealed: true,
         index: charIndex++,
       });
+      continue;
     }
-  });
+
+    // Check if next character is a small kana (compound character)
+    const nextChar = i < japanese.length - 1 ? japanese[i + 1] : null;
+    const smallKana = ['ゃ', 'ゅ', 'ょ', 'ャ', 'ュ', 'ョ', 'ぁ', 'ぃ', 'ぅ', 'ぇ', 'ぉ', 'ァ', 'ィ', 'ゥ', 'ェ', 'ォ', 'っ', 'ッ'];
+    const isNextSmallKana = nextChar && smallKana.includes(nextChar);
+
+    // If next is small kana, combine them
+    let japaneseChar = char;
+    if (isNextSmallKana) {
+      japaneseChar = char + nextChar;
+      i++; // Skip next character
+    }
+
+    // Use WanaKana to convert to romanji
+    const romanji = wanakana.toRomaji(japaneseChar);
+
+    result.push({
+      japanese: japaneseChar,
+      romanji: romanji,
+      revealed: false,
+      index: charIndex++,
+    });
+  }
 
   return result;
 }

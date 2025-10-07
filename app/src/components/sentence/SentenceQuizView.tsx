@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Word } from '../../types/word';
 import { useProgress } from '../../contexts/ProgressContext';
 import { generateQuizQuestion, QuizOption } from '../../utils/quizGenerator';
-import { Card, Button } from '../common';
+import { Card, Button, SpeakerButton } from '../common';
+import { useSpeech } from '../../hooks/useSpeech';
 import { Fireworks } from './Fireworks';
 
 interface SentenceQuizViewProps {
@@ -19,6 +20,7 @@ export function SentenceQuizView({
   onBackToStudy,
 }: SentenceQuizViewProps) {
   const { incrementScore } = useProgress();
+  const { speak, isSpeaking } = useSpeech();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -130,9 +132,19 @@ export function SentenceQuizView({
         <Card variant="elevated" padding="large">
           {/* Japanese sentence */}
           <div className="text-center mb-8">
-            <p className="text-sm text-text-tertiary mb-4">
-              What does this sentence mean in English?
-            </p>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <p className="text-sm text-text-tertiary">
+                What does this sentence mean in English?
+              </p>
+              <SpeakerButton
+                text={currentQuestion.sentence.japanese}
+                onSpeak={speak}
+                isSpeaking={isSpeaking}
+                variant="ghost"
+                size="small"
+                ariaLabel={`Listen to ${currentQuestion.sentence.japanese}`}
+              />
+            </div>
             <p className="text-3xl md:text-4xl font-japanese text-text-primary mb-2">
               {currentQuestion.sentence.japanese}
             </p>

@@ -30,15 +30,19 @@ export function SentenceMode() {
   const filteredSentences = useMemo(() => {
     const sentenceTypeItems = words.filter(w => w.type === 'sentence');
 
+    let filtered;
     if (filterType === 'all') {
-      return sentenceTypeItems;
+      filtered = sentenceTypeItems;
     } else if (filterType === 'day') {
-      return sentenceTypeItems.filter(w => w.day === selectedDay);
+      filtered = sentenceTypeItems.filter(w => w.day === selectedDay);
     } else if (filterType === 'needsReview') {
-      return sentenceTypeItems.filter(w => w.needsReview);
+      filtered = sentenceTypeItems.filter(w => w.needsReview);
+    } else {
+      filtered = sentenceTypeItems;
     }
 
-    return sentenceTypeItems;
+    // Shuffle the filtered sentences for random order
+    return [...filtered].sort(() => Math.random() - 0.5);
   }, [words, filterType, selectedDay]);
 
   // All sentences for distractor generation

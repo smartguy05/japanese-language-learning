@@ -18,6 +18,7 @@ export function AlphabetMode() {
   const [view, setView] = useState<View>('selection');
   const [filterType, setFilterType] = useState<FilterType>('day');
   const [selectedDay, setSelectedDay] = useState(progress.currentDay);
+  const [includeSentences, setIncludeSentences] = useState(false);
 
   // Get unique days from words
   const availableDays = useMemo(() => {
@@ -27,18 +28,44 @@ export function AlphabetMode() {
 
   // Filter words based on selection
   const filteredWords = useMemo(() => {
-    const wordTypeItems = words.filter(w => w.type === 'word');
+    // Start with words, optionally include sentences
+    const typeFilter = includeSentences
+      ? words.filter(w => w.type === 'word' || w.type === 'sentence')
+      : words.filter(w => w.type === 'word');
 
+    let filtered;
     if (filterType === 'all') {
-      return wordTypeItems;
+      filtered = typeFilter;
     } else if (filterType === 'day') {
-      return wordTypeItems.filter(w => w.day === selectedDay);
+      filtered = typeFilter.filter(w => w.day === selectedDay);
     } else if (filterType === 'needsReview') {
-      return wordTypeItems.filter(w => w.needsReview);
+      filtered = typeFilter.filter(w => w.needsReview);
+    } else {
+      filtered = typeFilter;
     }
 
-    return wordTypeItems;
-  }, [words, filterType, selectedDay]);
+    // Weighted shuffle: mastered words appear less frequently (20% weight vs 100%)
+    const MASTERED_WEIGHT = 0.2;
+    const NORMAL_WEIGHT = 1.0;
+
+    // Create weighted array where each word appears based on its weight
+    const weighted: typeof filtered = [];
+    filtered.forEach(word => {
+      const weight = word.mastered ? MASTERED_WEIGHT : NORMAL_WEIGHT;
+      // Add word probabilistically: mastered 20% chance, non-mastered 100% chance
+      if (Math.random() < weight) {
+        weighted.push(word);
+      }
+    });
+
+    // Ensure we have at least some words - if weighted selection filtered too much, add some mastered words back
+    if (weighted.length === 0 && filtered.length > 0) {
+      return [...filtered].sort(() => Math.random() - 0.5);
+    }
+
+    // Shuffle the weighted selection for random order
+    return [...weighted].sort(() => Math.random() - 0.5);
+  }, [words, filterType, selectedDay, includeSentences]);
 
   const handleStartStudy = () => {
     setView('study');
@@ -120,6 +147,33 @@ export function AlphabetMode() {
                 </Select>
               </div>
             )}
+
+            {/* Include Sentences Toggle */}
+            <div className="flex items-center justify-between p-4 bg-bg-secondary dark:bg-bg-secondary-dark rounded-lg">
+              <div>
+                <label htmlFor="include-sentences" className="block text-sm font-medium text-text-primary mb-1">
+                  Include Sentences
+                </label>
+                <p className="text-xs text-text-tertiary">
+                  Practice reading sentences character by character
+                </p>
+              </div>
+              <button
+                id="include-sentences"
+                role="switch"
+                aria-checked={includeSentences}
+                onClick={() => setIncludeSentences(!includeSentences)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo focus:ring-offset-2 ${
+                  includeSentences ? 'bg-indigo' : 'bg-bg-tertiary dark:bg-bg-tertiary-dark'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    includeSentences ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
 
           {/* Word count and actions */}
