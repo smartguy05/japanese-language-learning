@@ -3,6 +3,7 @@ import { Word } from '../../types/word';
 import { CharacterMap, generateCharacterMap, revealCharacter, revealAll, areAllRevealed } from '../../utils/characterMapping';
 import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
+import { useWords } from '../../contexts/WordContext';
 
 interface AlphabetQuizViewProps {
   words: Word[];
@@ -12,6 +13,7 @@ interface AlphabetQuizViewProps {
 
 export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQuizViewProps) {
   const { speak, isSpeaking } = useSpeech();
+  const { updateWord } = useWords();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [characterMaps, setCharacterMaps] = useState<CharacterMap[][]>([]);
 
@@ -50,6 +52,10 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
     }
+  };
+
+  const handleToggleMastered = () => {
+    updateWord(currentWord.id, { mastered: !currentWord.mastered });
   };
 
   const allRevealed = areAllRevealed(currentCharMap);
@@ -143,6 +149,17 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
           <div className="mt-8 p-4 bg-bg-secondary dark:bg-bg-secondary-dark rounded-lg">
             <p className="text-xs text-text-tertiary mb-1">English</p>
             <p className="text-xl text-text-primary">{currentWord.english}</p>
+          </div>
+
+          {/* Mastered toggle */}
+          <div className="mt-4">
+            <Button
+              onClick={handleToggleMastered}
+              variant={currentWord.mastered ? 'primary' : 'ghost'}
+              size="small"
+            >
+              {currentWord.mastered ? '✓ Mastered' : 'Mark as Mastered'}
+            </Button>
           </div>
         </div>
 

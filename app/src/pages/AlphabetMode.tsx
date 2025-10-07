@@ -44,8 +44,27 @@ export function AlphabetMode() {
       filtered = typeFilter;
     }
 
-    // Shuffle the filtered words for random order
-    return [...filtered].sort(() => Math.random() - 0.5);
+    // Weighted shuffle: mastered words appear less frequently (20% weight vs 100%)
+    const MASTERED_WEIGHT = 0.2;
+    const NORMAL_WEIGHT = 1.0;
+
+    // Create weighted array where each word appears based on its weight
+    const weighted: typeof filtered = [];
+    filtered.forEach(word => {
+      const weight = word.mastered ? MASTERED_WEIGHT : NORMAL_WEIGHT;
+      // Add word probabilistically: mastered 20% chance, non-mastered 100% chance
+      if (Math.random() < weight) {
+        weighted.push(word);
+      }
+    });
+
+    // Ensure we have at least some words - if weighted selection filtered too much, add some mastered words back
+    if (weighted.length === 0 && filtered.length > 0) {
+      return [...filtered].sort(() => Math.random() - 0.5);
+    }
+
+    // Shuffle the weighted selection for random order
+    return [...weighted].sort(() => Math.random() - 0.5);
   }, [words, filterType, selectedDay, includeSentences]);
 
   const handleStartStudy = () => {
