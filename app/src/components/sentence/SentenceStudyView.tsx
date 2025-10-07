@@ -1,5 +1,6 @@
 import { Word } from '../../types/word';
-import { Card, Button } from '../common';
+import { Card, Button, SpeakerButton } from '../common';
+import { useSpeech } from '../../hooks/useSpeech';
 
 interface SentenceStudyViewProps {
   sentences: Word[];
@@ -8,6 +9,8 @@ interface SentenceStudyViewProps {
 }
 
 export function SentenceStudyView({ sentences, onStartQuiz, onBack }: SentenceStudyViewProps) {
+  const { speak, isSpeaking } = useSpeech();
+
   if (sentences.length === 0) {
     return (
       <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -47,26 +50,37 @@ export function SentenceStudyView({ sentences, onStartQuiz, onBack }: SentenceSt
               padding="medium"
               className="hover:shadow-lg transition-shadow"
             >
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">Japanese</p>
-                  <p className="text-2xl md:text-3xl font-japanese text-text-primary">
-                    {sentence.japanese}
-                  </p>
-                </div>
+              <div className="flex items-start gap-3">
+                <SpeakerButton
+                  text={sentence.japanese}
+                  onSpeak={speak}
+                  isSpeaking={isSpeaking}
+                  variant="ghost"
+                  size="small"
+                  className="mt-1"
+                />
 
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">Romanji</p>
-                  <p className="text-base md:text-lg text-text-secondary font-mono">
-                    {sentence.romanji}
-                  </p>
-                </div>
+                <div className="space-y-3 flex-1">
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">Japanese</p>
+                    <p className="text-2xl md:text-3xl font-japanese text-text-primary">
+                      {sentence.japanese}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="text-xs text-text-tertiary mb-1">English</p>
-                  <p className="text-base md:text-lg text-text-primary">
-                    {sentence.english}
-                  </p>
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">Romanji</p>
+                    <p className="text-base md:text-lg text-text-secondary font-mono">
+                      {sentence.romanji}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-text-tertiary mb-1">English</p>
+                    <p className="text-base md:text-lg text-text-primary">
+                      {sentence.english}
+                    </p>
+                  </div>
                 </div>
               </div>
 

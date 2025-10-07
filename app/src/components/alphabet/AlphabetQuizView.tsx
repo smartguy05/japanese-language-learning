@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Word } from '../../types/word';
 import { CharacterMap, generateCharacterMap, revealCharacter, revealAll, areAllRevealed } from '../../utils/characterMapping';
-import { Card, Button } from '../common';
+import { Card, Button, SpeakerButton } from '../common';
+import { useSpeech } from '../../hooks/useSpeech';
 
 interface AlphabetQuizViewProps {
   words: Word[];
@@ -10,6 +11,7 @@ interface AlphabetQuizViewProps {
 }
 
 export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQuizViewProps) {
+  const { speak, isSpeaking } = useSpeech();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [characterMaps, setCharacterMaps] = useState<CharacterMap[][]>([]);
 
@@ -96,7 +98,17 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
       {/* Quiz card */}
       <Card variant="elevated" padding="large">
         <div className="text-center mb-8">
-          <p className="text-sm text-text-tertiary mb-4">Click each Japanese character to reveal its romanji</p>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <p className="text-sm text-text-tertiary">Click each Japanese character to reveal its romanji</p>
+            <SpeakerButton
+              text={currentWord.japanese}
+              onSpeak={speak}
+              isSpeaking={isSpeaking}
+              variant="ghost"
+              size="small"
+              ariaLabel={`Listen to ${currentWord.japanese}`}
+            />
+          </div>
 
           {/* Japanese characters */}
           <div className="flex flex-wrap justify-center gap-2 mb-8">

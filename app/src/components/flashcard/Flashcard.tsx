@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Word } from '../../types/word';
-import { Card } from '../common';
+import { Card, SpeakerButton } from '../common';
+import { useSpeech } from '../../hooks/useSpeech';
 
 interface FlashcardProps {
   word: Word;
@@ -10,6 +11,7 @@ interface FlashcardProps {
 }
 
 export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: FlashcardProps) {
+  const { speak, isSpeaking } = useSpeech();
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -21,6 +23,11 @@ export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: Flashc
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
+  };
+
+  const handleSpeakerClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card flip when clicking speaker
+    speak(word.japanese);
   };
 
   // Touch handlers for swipe gestures
@@ -66,7 +73,18 @@ export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: Flashc
       >
         {/* Front of card */}
         <div className="flashcard-face flashcard-front absolute w-full h-full backface-hidden">
-          <Card variant="elevated" padding="large" className="h-full flex flex-col items-center justify-center">
+          <Card variant="elevated" padding="large" className="h-full flex flex-col items-center justify-center relative">
+            {direction === 'japaneseToEnglish' && (
+              <div className="absolute top-4 right-4" onClick={handleSpeakerClick}>
+                <SpeakerButton
+                  text={word.japanese}
+                  onSpeak={speak}
+                  isSpeaking={isSpeaking}
+                  variant="ghost"
+                  size="small"
+                />
+              </div>
+            )}
             <p className="text-xs text-text-tertiary mb-4 uppercase tracking-wide">{frontLabel}</p>
             <p className={`text-center ${
               direction === 'japaneseToEnglish'
@@ -84,7 +102,18 @@ export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: Flashc
 
         {/* Back of card */}
         <div className="flashcard-face flashcard-back absolute w-full h-full backface-hidden rotate-y-180">
-          <Card variant="elevated" padding="large" className="h-full flex flex-col items-center justify-center bg-indigo bg-opacity-10">
+          <Card variant="elevated" padding="large" className="h-full flex flex-col items-center justify-center bg-indigo bg-opacity-10 relative">
+            {direction === 'englishToJapanese' && (
+              <div className="absolute top-4 right-4" onClick={handleSpeakerClick}>
+                <SpeakerButton
+                  text={word.japanese}
+                  onSpeak={speak}
+                  isSpeaking={isSpeaking}
+                  variant="ghost"
+                  size="small"
+                />
+              </div>
+            )}
             <p className="text-xs text-text-tertiary mb-4 uppercase tracking-wide">{backLabel}</p>
             <p className={`text-center ${
               direction === 'englishToJapanese'

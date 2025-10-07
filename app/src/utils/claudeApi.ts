@@ -81,17 +81,19 @@ Example format:
 ]`;
 
   try {
-    // Use proxy server to avoid CORS issues
-    const response = await fetch('http://localhost:3001/api/generate', {
+    // Direct API call with CORS support
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        apiKey,
-        prompt,
         model: 'claude-sonnet-4-20250514',
-        maxTokens: 2048
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
