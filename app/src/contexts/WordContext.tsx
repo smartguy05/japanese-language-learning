@@ -109,11 +109,20 @@ export function WordProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const exportData = useCallback((): ExportData => {
-    // Import here to avoid circular dependency
-    const { exportData: exportDataUtil } = require('../utils/importExport');
     const progress = getItem(STORAGE_KEYS.PROGRESS, {});
     const settings = getItem(STORAGE_KEYS.SETTINGS, {});
-    return exportDataUtil(words, progress, settings);
+
+    const { theme, ...settingsWithoutTheme } = settings;
+
+    return {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      data: {
+        words,
+        progress,
+        settings: settingsWithoutTheme,
+      },
+    };
   }, [words]);
 
   const clearAllData = useCallback(() => {
