@@ -5,6 +5,8 @@ import { useWords } from '../../contexts/WordContext';
 import { generateWordsWithClaude } from '../../utils/claudeApi';
 import type { Word } from '../../types/word';
 
+type CharacterType = 'both' | 'hiragana' | 'katakana';
+
 interface WordGeneratorProps {
   type: 'word' | 'sentence';
   currentDay: number;
@@ -27,6 +29,7 @@ export function WordGenerator({ type }: WordGeneratorProps) {
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState(3);
   const [selectedDay, setSelectedDay] = useState(nextDay);
+  const [characterType, setCharacterType] = useState<CharacterType>('both');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -63,6 +66,7 @@ export function WordGenerator({ type }: WordGeneratorProps) {
         existingWords: words,
         currentDay: selectedDay,
         model: settings.claudeModel || undefined,
+        characterType,
       });
 
       bulkAddWords(generatedWords as Word[]);
@@ -145,6 +149,25 @@ export function WordGenerator({ type }: WordGeneratorProps) {
             <span>Easiest</span>
             <span>Hardest</span>
           </div>
+        </div>
+
+        {/* Character Type Selection */}
+        <div>
+          <label htmlFor="character-type" className="block text-text-primary font-medium mb-2">
+            Character Type
+          </label>
+          <Select
+            id="character-type"
+            value={characterType}
+            onChange={(e) => setCharacterType(e.target.value as CharacterType)}
+          >
+            <option value="both">Both (Hiragana & Katakana)</option>
+            <option value="hiragana">Hiragana Only</option>
+            <option value="katakana">Katakana Only</option>
+          </Select>
+          <p className="text-xs text-text-secondary mt-1">
+            Choose which Japanese script to use for generated words
+          </p>
         </div>
 
         {/* Generate Button */}

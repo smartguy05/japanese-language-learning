@@ -146,6 +146,16 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
             ))}
           </div>
 
+          {/* Complete Romanji when all characters revealed */}
+          {allRevealed && (
+            <div className="mb-6 p-4 bg-indigo bg-opacity-10 rounded-lg border border-indigo border-opacity-20">
+              <p className="text-xs text-text-tertiary mb-2">Romanji (Complete)</p>
+              <p className="text-2xl font-mono text-indigo">
+                {currentWord.romanji}
+              </p>
+            </div>
+          )}
+
           {/* English translation */}
           <div className="mt-8 p-4 bg-bg-secondary dark:bg-bg-secondary-dark rounded-lg">
             <p className="text-xs text-text-tertiary mb-1">English</p>

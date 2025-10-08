@@ -80,3 +80,44 @@ export function revealAll(charMap: CharacterMap[]): CharacterMap[] {
 export function areAllRevealed(charMap: CharacterMap[]): boolean {
   return charMap.filter(c => c.japanese !== ' ').every(c => c.revealed);
 }
+
+/**
+ * Represents a word (group of characters separated by spaces)
+ */
+export interface WordGroup {
+  characters: CharacterMap[];
+  romanji: string;
+  isFullyRevealed: boolean;
+}
+
+/**
+ * Groups character map into words (separated by spaces) and checks if each word is fully revealed
+ */
+export function groupCharactersByWords(charMap: CharacterMap[]): WordGroup[] {
+  const words: WordGroup[] = [];
+  let currentWord: CharacterMap[] = [];
+
+  for (const char of charMap) {
+    if (char.japanese === ' ' || char.japanese === '　') {
+      // If we have accumulated characters, add them as a word
+      if (currentWord.length > 0) {
+        const romanji = currentWord.map(c => c.romanji).join('');
+        const isFullyRevealed = currentWord.every(c => c.revealed);
+        words.push({ characters: currentWord, romanji, isFullyRevealed });
+        currentWord = [];
+      }
+      // Spaces don't form their own words
+    } else {
+      currentWord.push(char);
+    }
+  }
+
+  // Add the last word if there are remaining characters
+  if (currentWord.length > 0) {
+    const romanji = currentWord.map(c => c.romanji).join('');
+    const isFullyRevealed = currentWord.every(c => c.revealed);
+    words.push({ characters: currentWord, romanji, isFullyRevealed });
+  }
+
+  return words;
+}
