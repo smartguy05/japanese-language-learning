@@ -10,6 +10,10 @@ export const DEFAULT_SETTINGS = {
   reviewMode: 'sequential' as const,
   flashcardDirection: 'japaneseToEnglish' as const,
   showStudyModeByDefault: true,
+  claudeApiKey: null,
+  claudeModel: null,
+  cachedModels: [],
+  lastModelsFetch: null,
   lastExportDate: null,
   dataVersion: '1.0',
 };

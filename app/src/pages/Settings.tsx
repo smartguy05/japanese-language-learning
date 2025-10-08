@@ -1,12 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
-import { Card, Button, Input, Toast, ToastType, Select } from '../components/common';
+import { useState, useRef } from 'react';
+import type { ToastType } from '../components/common';
+import { Card, Button, Input, Toast, Select } from '../components/common';
 import { useTheme } from '../contexts/ThemeContext';
 import { useWords } from '../contexts/WordContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
-import { validateApiKey, fetchAnthropicModels, AnthropicModel } from '../utils/claudeApi';
+import { validateApiKey, fetchAnthropicModels } from '../utils/claudeApi';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();

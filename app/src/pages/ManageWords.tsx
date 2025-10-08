@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useWords } from '../contexts/WordContext';
-import { Word } from '../types/word';
+import type { Word } from '../types/word';
 import { Card, Button, Input, Modal } from '../components/common';
 import { WordForm } from '../components/manage/WordForm';
 import { WordListItem } from '../components/manage/WordListItem';

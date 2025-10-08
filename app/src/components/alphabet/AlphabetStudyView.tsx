@@ -1,4 +1,4 @@
-import { Word } from '../../types/word';
+import type { Word } from '../../types/word';
 import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 

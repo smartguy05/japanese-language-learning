@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Word } from '../../types/word';
+import { useState, useMemo } from 'react';
+import type { Word } from '../../types/word';
 import { useProgress } from '../../contexts/ProgressContext';
-import { generateQuizQuestion, QuizOption } from '../../utils/quizGenerator';
+import type { QuizOption } from '../../utils/quizGenerator';
+import { generateQuizQuestion } from '../../utils/quizGenerator';
 import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 import { Fireworks } from './Fireworks';
@@ -47,14 +48,14 @@ export function SentenceQuizView({
 
     if (isCorrect) {
       setScore(prev => ({ ...prev, correct: prev.correct + 1 }));
-      incrementScore('sentenceMode', true);
+      incrementScore('sentence', true);
       setShowFireworks(true);
 
       // Hide fireworks after animation
       setTimeout(() => setShowFireworks(false), 1500);
     } else {
       setScore(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
-      incrementScore('sentenceMode', false);
+      incrementScore('sentence', false);
     }
   };
 

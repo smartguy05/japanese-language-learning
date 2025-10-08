@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppSettings } from '../types/settings';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { AppSettings } from '../types/settings';
 import { getItem, setItem } from '../utils/storage';
 
 const STORAGE_KEY = 'jp-learn-settings';

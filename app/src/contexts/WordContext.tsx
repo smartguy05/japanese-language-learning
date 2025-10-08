@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Word, ExportData, UserProgress, AppSettings } from '../types';
+import type { Word, ExportData, AppSettings } from '../types';
 import { getItem, setItem } from '../utils/storage';
-import { STORAGE_KEYS } from '../utils/constants';
+import { STORAGE_KEYS, DEFAULT_SETTINGS, DEFAULT_PROGRESS } from '../utils/constants';
 import { validateWord } from '../utils/validation';
 
 interface WordContextValue {
@@ -115,7 +116,7 @@ export function WordProvider({ children }: { children: ReactNode }) {
 
     // Import settings if available (excluding theme which is managed separately)
     if (data.data.settings) {
-      const currentSettings = getItem<AppSettings>(STORAGE_KEYS.SETTINGS, {});
+      const currentSettings = getItem<AppSettings>(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
       const { theme: currentTheme } = currentSettings;
 
       // Merge imported settings while preserving current theme
@@ -132,8 +133,8 @@ export function WordProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const exportData = useCallback((): ExportData => {
-    const progress = getItem(STORAGE_KEYS.PROGRESS, {});
-    const settings = getItem(STORAGE_KEYS.SETTINGS, {});
+    const progress = getItem(STORAGE_KEYS.PROGRESS, DEFAULT_PROGRESS);
+    const settings = getItem(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
 
     const { theme, ...settingsWithoutTheme } = settings;
 

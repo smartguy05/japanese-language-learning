@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { UserProgress, Mode } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_PROGRESS } from '../utils/constants';
@@ -58,21 +59,21 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const markAsMastered = useCallback((wordId: string, mastered: boolean) => {
+  const markAsMastered = useCallback((_wordId: string, mastered: boolean) => {
     setProgress(prev => ({
       ...prev,
       masteredWords: mastered ? prev.masteredWords + 1 : Math.max(0, prev.masteredWords - 1),
     }));
   }, []);
 
-  const markNeedsReview = useCallback((wordId: string, needs: boolean) => {
+  const markNeedsReview = useCallback((_wordId: string, needs: boolean) => {
     setProgress(prev => ({
       ...prev,
       wordsNeedingReview: needs ? prev.wordsNeedingReview + 1 : Math.max(0, prev.wordsNeedingReview - 1),
     }));
   }, []);
 
-  const recordReview = useCallback((wordId: string, correct: boolean) => {
+  const recordReview = useCallback((_wordId: string, _correct: boolean) => {
     // This is handled by Word updates in WordContext
     // But we update study date here
     setProgress(prev => ({

@@ -1,16 +1,16 @@
 import { useState, useMemo } from 'react';
-import { Card, Button, Input, Select } from '../common';
+import { Card, Button, Select } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useWords } from '../../contexts/WordContext';
 import { generateWordsWithClaude } from '../../utils/claudeApi';
-import { Word } from '../../types/word';
+import type { Word } from '../../types/word';
 
 interface WordGeneratorProps {
   type: 'word' | 'sentence';
   currentDay: number;
 }
 
-export function WordGenerator({ type, currentDay }: WordGeneratorProps) {
+export function WordGenerator({ type }: WordGeneratorProps) {
   const { settings } = useSettings();
   const { words, bulkAddWords } = useWords();
 

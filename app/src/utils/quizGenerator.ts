@@ -1,4 +1,4 @@
-import { Word } from '../types/word';
+import type { Word } from '../types/word';
 
 export interface QuizOption {
   text: string;
@@ -108,7 +108,7 @@ function calculateSimilarityScore(correct: string, candidate: string, correctLen
 /**
  * Generates a fallback distractor when not enough real sentences available
  */
-function generateFallbackDistractor(correctAnswer: string, index: number): string {
+function generateFallbackDistractor(_correctAnswer: string, index: number): string {
   const fallbackPhrases = [
     'This is a placeholder answer.',
     'Another option to consider.',

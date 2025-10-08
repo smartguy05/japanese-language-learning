@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Word } from '../../types/word';
+import type { Word } from '../../types/word';
 import { Card, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 

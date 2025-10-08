@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Word } from '../../types/word';
-import { Button, Input, Select, Card } from '../common';
+import type { Word } from '../../types/word';
+import { Button, Input, Card } from '../common';
 
 interface WordFormProps {
   word?: Word;

@@ -1,4 +1,4 @@
-import { Word } from '../../types/word';
+import type { Word } from '../../types/word';
 import { Button, Card } from '../common';
 
 interface WordListItemProps {

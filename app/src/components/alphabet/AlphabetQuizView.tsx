@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Word } from '../../types/word';
-import { CharacterMap, generateCharacterMap, revealCharacter, revealAll, areAllRevealed } from '../../utils/characterMapping';
+import type { Word } from '../../types/word';
+import type { CharacterMap } from '../../utils/characterMapping';
+import { generateCharacterMap, revealCharacter, revealAll, areAllRevealed } from '../../utils/characterMapping';
 import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useWords } from '../../contexts/WordContext';
