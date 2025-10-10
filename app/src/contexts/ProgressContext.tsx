@@ -77,7 +77,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setProgress(prev => ({
       ...prev,
       sessionScore: {
-        alphabetMode: { correct: 0, incorrect: 0 },
+        wordMode: { correct: 0, incorrect: 0 },
         sentenceMode: { correct: 0, incorrect: 0 },
         flashcardMode: { correct: 0, incorrect: 0 },
       },

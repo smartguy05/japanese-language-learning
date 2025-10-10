@@ -196,7 +196,7 @@ function getDefaultProgress(): UserProgress {
     wordsNeedingReview: 0,
     currentDay: 1,
     sessionScore: {
-      alphabetMode: { correct: 0, incorrect: 0 },
+      wordMode: { correct: 0, incorrect: 0 },
       sentenceMode: { correct: 0, incorrect: 0 },
       flashcardMode: { correct: 0, incorrect: 0 },
     },

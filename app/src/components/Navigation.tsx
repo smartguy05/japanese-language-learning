@@ -5,7 +5,7 @@ export function Navigation() {
 
   const navItems = [
     { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/alphabet', label: 'Alphabet', icon: 'あ' },
+    { path: '/words', label: 'Words', icon: 'あ' },
     { path: '/sentence', label: 'Sentence', icon: '文' },
     { path: '/flashcard', label: 'Cards', icon: '🃏' },
     { path: '/manage', label: 'Manage', icon: '📝' },

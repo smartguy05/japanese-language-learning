@@ -57,9 +57,9 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Link to="/alphabet">
+        <Link to="/words">
           <Card variant="elevated" padding="large" className="hover:scale-105 transition-transform cursor-pointer">
-            <h3 className="text-lg font-semibold text-text-primary mb-2">Alphabet Mode</h3>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Word Mode</h3>
             <p className="text-text-secondary text-sm">Learn characters with romanji reveal</p>
           </Card>
         </Link>

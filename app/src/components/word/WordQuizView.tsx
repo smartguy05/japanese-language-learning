@@ -6,13 +6,13 @@ import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useWords } from '../../contexts/WordContext';
 
-interface AlphabetQuizViewProps {
+interface WordQuizViewProps {
   words: Word[];
   onComplete: () => void;
   onBackToStudy: () => void;
 }
 
-export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQuizViewProps) {
+export function WordQuizView({ words, onComplete, onBackToStudy }: WordQuizViewProps) {
   const { speak, isSpeaking } = useSpeech();
   const { updateWord } = useWords();
   const [currentIndex, setCurrentIndex] = useState(0);

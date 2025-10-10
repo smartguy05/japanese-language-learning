@@ -3,14 +3,14 @@ import { useWords } from '../contexts/WordContext';
 import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { Card, Button, Select } from '../components/common';
-import { AlphabetStudyView } from '../components/alphabet/AlphabetStudyView';
-import { AlphabetQuizView } from '../components/alphabet/AlphabetQuizView';
+import { WordStudyView } from '../components/word/WordStudyView';
+import { WordQuizView } from '../components/word/WordQuizView';
 import { WordGenerator } from '../components/generate';
 
 type View = 'selection' | 'study' | 'quiz';
 type FilterType = 'all' | 'day' | 'needsReview';
 
-export function AlphabetMode() {
+export function WordMode() {
   const { words } = useWords();
   const { progress } = useProgress();
   const { hasApiKey } = useSettings();
@@ -93,7 +93,7 @@ export function AlphabetMode() {
         )}
 
         <Card variant="elevated" padding="large">
-          <h1 className="text-2xl font-bold text-text-primary mb-4">Alphabet Mode</h1>
+          <h1 className="text-2xl font-bold text-text-primary mb-4">Word Mode</h1>
           <p className="text-text-secondary mb-6">
             Click on Japanese characters to reveal their romanji pronunciation. Perfect for learning hiragana and katakana.
           </p>
@@ -214,7 +214,7 @@ export function AlphabetMode() {
   // Study view
   if (view === 'study') {
     return (
-      <AlphabetStudyView
+      <WordStudyView
         words={filteredWords}
         onStartQuiz={handleStartQuiz}
         onBack={handleBack}
@@ -225,7 +225,7 @@ export function AlphabetMode() {
   // Quiz view
   if (view === 'quiz') {
     return (
-      <AlphabetQuizView
+      <WordQuizView
         words={filteredWords}
         onComplete={handleComplete}
         onBackToStudy={() => setView('study')}

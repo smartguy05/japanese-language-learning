@@ -6,7 +6,7 @@ import { ProgressProvider } from './contexts/ProgressContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './pages/Dashboard';
-import { AlphabetMode } from './pages/AlphabetMode';
+import { WordMode } from './pages/WordMode';
 import { SentenceMode } from './pages/SentenceMode';
 import { FlashcardMode } from './pages/FlashcardMode';
 import { ManageWords } from './pages/ManageWords';
@@ -25,7 +25,7 @@ function App() {
                   <main className="pt-4 md:pt-8">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      <Route path="/alphabet" element={<AlphabetMode />} />
+                      <Route path="/words" element={<WordMode />} />
                       <Route path="/sentence" element={<SentenceMode />} />
                       <Route path="/flashcard" element={<FlashcardMode />} />
                       <Route path="/manage" element={<ManageWords />} />

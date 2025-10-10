@@ -408,7 +408,7 @@ export function Settings() {
           A Progressive Web Application for learning Japanese through interactive study modes.
         </p>
         <p className="text-text-secondary text-sm mt-4">
-          • Alphabet Mode - Character reveal system<br />
+          • Word Mode - Character reveal system<br />
           • Sentence Mode - Comprehension quizzes<br />
           • Flashcard Mode - Traditional review<br />
           • Completely offline-first with no backend

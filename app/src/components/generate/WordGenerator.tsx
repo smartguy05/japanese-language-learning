@@ -26,6 +26,7 @@ export function WordGenerator({ type }: WordGeneratorProps) {
     };
   }, [words]);
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState(3);
   const [selectedDay, setSelectedDay] = useState(nextDay);
@@ -80,11 +81,21 @@ export function WordGenerator({ type }: WordGeneratorProps) {
 
   return (
     <Card variant="default" padding="large" className="mb-6">
-      <h2 className="text-xl font-semibold text-text-primary mb-4">
-        Generate New {type === 'word' ? 'Words' : 'Sentences'} with AI
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-text-primary">
+          Generate New {type === 'word' ? 'Words' : 'Sentences'} with AI
+        </h2>
+        <Button
+          onClick={() => setIsExpanded(!isExpanded)}
+          variant="secondary"
+          size="small"
+        >
+          {isExpanded ? 'Hide' : 'Show'}
+        </Button>
+      </div>
 
-      <div className="space-y-4">
+      {isExpanded && (
+        <div className="space-y-4 mt-4">
         {/* Day Selection */}
         <div>
           <label className="block text-text-primary font-medium mb-2">
@@ -193,7 +204,8 @@ export function WordGenerator({ type }: WordGeneratorProps) {
         <p className="text-text-secondary text-xs">
           Note: Generated {type}s will use only hiragana (ひらがな) or katakana (カタカナ) - no kanji.
         </p>
-      </div>
+        </div>
+      )}
     </Card>
   );
 }
