@@ -8,6 +8,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
 import { validateApiKey, fetchAnthropicModels } from '../utils/claudeApi';
+import { SyncSettingsSection } from '../components/settings/SyncSettingsSection';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -391,6 +392,11 @@ export function Settings() {
           </div>
         </div>
       </Card>
+
+      {/* Google Drive Sync */}
+      <div className="mb-6">
+        <SyncSettingsSection />
+      </div>
 
       {/* About */}
       <Card variant="default" padding="large">

@@ -4,6 +4,14 @@ import type { UserProgress, Mode } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_PROGRESS } from '../utils/constants';
 
+// Import sync context (wrapped in try-catch to avoid circular dependency issues)
+let syncContext: typeof import('./SyncContext') | null = null;
+try {
+  syncContext = require('./SyncContext');
+} catch {
+  // Sync context not available yet (during initialization)
+}
+
 interface ProgressContextValue {
   progress: UserProgress;
   incrementScore: (mode: Mode, correct: boolean) => void;
@@ -24,10 +32,26 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return getItem<UserProgress>(STORAGE_KEYS.PROGRESS, DEFAULT_PROGRESS);
   });
 
+  // Try to get sync context (may not be available if not wrapped in SyncProvider)
+  let triggerSync: ((reason: string) => void) | null = null;
+  try {
+    if (syncContext) {
+      const sync = syncContext.useSyncContext();
+      triggerSync = sync.triggerSync;
+    }
+  } catch {
+    // SyncContext not available
+  }
+
   // Persist to localStorage whenever progress changes
   useEffect(() => {
     setItem(STORAGE_KEYS.PROGRESS, progress);
-  }, [progress]);
+
+    // Trigger sync after saving to localStorage
+    if (triggerSync) {
+      triggerSync('progress-change');
+    }
+  }, [progress, triggerSync]);
 
   const incrementScore = useCallback((mode: Mode, correct: boolean) => {
     setProgress(prev => {
@@ -44,6 +68,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           },
         },
         lastStudyDate: new Date().toISOString(),
+        lastModified: Date.now(),
       };
     });
   }, []);
@@ -114,6 +139,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setProgress(prev => ({
       ...prev,
       ...stats,
+      lastModified: Date.now(),
     }));
   }, []);
 

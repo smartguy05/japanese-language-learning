@@ -3,6 +3,14 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { AppSettings } from '../types/settings';
 import { getItem, setItem } from '../utils/storage';
 
+// Import sync context (wrapped in try-catch to avoid circular dependency issues)
+let syncContext: typeof import('./SyncContext') | null = null;
+try {
+  syncContext = require('./SyncContext');
+} catch {
+  // Sync context not available yet (during initialization)
+}
+
 const STORAGE_KEY = 'jp-learn-settings';
 
 const defaultSettings: AppSettings = {
@@ -16,6 +24,7 @@ const defaultSettings: AppSettings = {
   lastModelsFetch: null,
   lastExportDate: null,
   dataVersion: '1.0',
+  lastModified: Date.now(),
 };
 
 interface SettingsContextValue {
@@ -31,9 +40,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return getItem<AppSettings>(STORAGE_KEY, defaultSettings);
   });
 
+  // Try to get sync context (may not be available if not wrapped in SyncProvider)
+  let triggerSync: ((reason: string) => void) | null = null;
+  try {
+    if (syncContext) {
+      const sync = syncContext.useSyncContext();
+      triggerSync = sync.triggerSync;
+    }
+  } catch {
+    // SyncContext not available
+  }
+
   useEffect(() => {
     setItem(STORAGE_KEY, settings);
-  }, [settings]);
+
+    // Trigger sync after saving to localStorage (except for theme changes which are device-specific)
+    if (triggerSync) {
+      triggerSync('settings-change');
+    }
+  }, [settings, triggerSync]);
 
   // Listen for settings import events
   useEffect(() => {
@@ -47,7 +72,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateSettings = (updates: Partial<AppSettings>) => {
-    setSettings(prev => ({ ...prev, ...updates }));
+    setSettings(prev => ({ ...prev, ...updates, lastModified: Date.now() }));
   };
 
   const hasApiKey = Boolean(settings.claudeApiKey && settings.claudeApiKey.trim());

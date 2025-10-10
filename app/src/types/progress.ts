@@ -20,4 +20,7 @@ export interface UserProgress {
   dailyStreak: number;
   lastStudyDate: string; // ISO 8601
   totalStudyTime: number; // Minutes (future enhancement)
+
+  // Sync metadata
+  lastModified: number; // Unix timestamp (ms) for sync conflict resolution
 }

@@ -18,4 +18,5 @@ export interface AppSettings {
   // Data Management
   lastExportDate: string | null; // ISO 8601
   dataVersion: string; // For future migration compatibility
+  lastModified: number; // Unix timestamp (ms) for sync conflict resolution
 }
