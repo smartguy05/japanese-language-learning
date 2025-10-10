@@ -4,6 +4,7 @@ import { Button } from '../common/Button';
 import { Card } from '../common/Card';
 import { SyncPrivacyModal } from './SyncPrivacyModal';
 import { SyncConflictResolutionModal } from './SyncConflictResolutionModal';
+import { SyncReconnectModal } from './SyncReconnectModal';
 
 export function SyncSettingsSection() {
   const {
@@ -18,6 +19,9 @@ export function SyncSettingsSection() {
     pendingSyncCount,
     pendingConflict,
     resolveConflict,
+    showReconnectPrompt,
+    reconnectAndSync,
+    dismissReconnectPrompt,
   } = useSyncContext();
 
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -54,7 +58,9 @@ export function SyncSettingsSection() {
   const handleDisconnect = async () => {
     try {
       setIsDisconnecting(true);
-      await disableSync(deleteRemoteData);
+      // Only attempt to delete remote data if authenticated
+      const shouldDeleteRemote = deleteRemoteData && isAuthenticated;
+      await disableSync(shouldDeleteRemote);
       setShowDisconnectDialog(false);
       setDeleteRemoteData(false);
     } catch (error) {
@@ -274,17 +280,29 @@ export function SyncSettingsSection() {
               Your local data will remain on this device, but will no longer sync to Google Drive.
             </p>
 
-            <label className="flex items-start space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={deleteRemoteData}
-                onChange={(e) => setDeleteRemoteData(e.target.checked)}
-                className="mt-1 w-4 h-4 text-indigo border-gray-300 rounded focus:ring-indigo"
-              />
-              <span className="text-sm text-text-secondary">
-                Also delete data from Google Drive
-              </span>
-            </label>
+            {/* Only show delete option if token is still valid */}
+            {isAuthenticated && (
+              <label className="flex items-start space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={deleteRemoteData}
+                  onChange={(e) => setDeleteRemoteData(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-indigo border-gray-300 rounded focus:ring-indigo"
+                />
+                <span className="text-sm text-text-secondary">
+                  Also delete data from Google Drive
+                </span>
+              </label>
+            )}
+
+            {/* Show warning if token is expired */}
+            {!isAuthenticated && (
+              <div className="p-3 bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded text-yellow-600 text-sm">
+                <p>
+                  Your session has expired. Data on Google Drive cannot be deleted without re-authenticating.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
@@ -337,6 +355,13 @@ export function SyncSettingsSection() {
         } : null}
         onResolve={handleResolveConflict}
         isResolving={isResolvingConflict}
+      />
+
+      {/* Reconnect Modal */}
+      <SyncReconnectModal
+        isOpen={showReconnectPrompt}
+        onReconnect={reconnectAndSync}
+        onDismiss={dismissReconnectPrompt}
       />
     </>
   );

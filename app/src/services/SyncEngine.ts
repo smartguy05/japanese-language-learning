@@ -32,6 +32,7 @@ export class SyncEngine {
   private readonly CONNECTIVITY_POLL_INTERVAL = 30000; // 30 seconds
   private pendingConflict: ConflictInfo | null = null;
   private conflictResolutionCallback: ((conflict: ConflictInfo) => Promise<'keep-local' | 'keep-remote' | 'cancel'>) | null = null;
+  private tokenExpiredCallback: ((reason: SyncReason) => void) | null = null;
 
   constructor(driveService: GoogleDriveService) {
     this.driveService = driveService;
@@ -51,6 +52,20 @@ export class SyncEngine {
    */
   clearConflictResolutionCallback(): void {
     this.conflictResolutionCallback = null;
+  }
+
+  /**
+   * Set callback for token expiration
+   */
+  setTokenExpiredCallback(callback: (reason: SyncReason) => void): void {
+    this.tokenExpiredCallback = callback;
+  }
+
+  /**
+   * Clear the token expired callback
+   */
+  clearTokenExpiredCallback(): void {
+    this.tokenExpiredCallback = null;
   }
 
   /**
@@ -128,6 +143,13 @@ export class SyncEngine {
       updateSyncConfig({
         lastError: 'Authentication expired. Please re-authenticate.',
       });
+
+      // Trigger reconnect prompt if callback is set
+      if (this.tokenExpiredCallback && config.pendingSyncOperations.length > 0) {
+        const firstOp = config.pendingSyncOperations[0];
+        this.tokenExpiredCallback(firstOp.type);
+      }
+
       return;
     }
 

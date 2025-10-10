@@ -97,7 +97,7 @@ export interface SyncResult {
   direction: 'upload' | 'download' | 'none'; // What happened
   timestamp: number; // Unix timestamp (milliseconds)
   error?: string;
-  conflictResolution?: 'local-newer' | 'remote-newer' | 'same';
+  conflictResolution?: 'local-newer' | 'remote-newer' | 'same' | 'manual' | 'cancelled';
 }
 
 /**

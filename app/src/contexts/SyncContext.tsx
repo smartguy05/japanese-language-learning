@@ -18,6 +18,7 @@ interface SyncContextValue {
   pendingSyncCount: number;
   lastError: string | null;
   pendingConflict: ConflictInfo | null;
+  showReconnectPrompt: boolean;
 
   // Actions
   enableSync: () => Promise<void>;
@@ -25,6 +26,8 @@ interface SyncContextValue {
   manualSync: () => Promise<void>;
   triggerSync: (reason: SyncReason) => void;
   resolveConflict: (choice: 'keep-local' | 'keep-remote' | 'cancel') => void;
+  reconnectAndSync: () => Promise<void>;
+  dismissReconnectPrompt: () => void;
 
   // Utilities
   refreshStatus: () => void;
@@ -45,6 +48,8 @@ export function SyncProvider({ children }: SyncProviderProps) {
   const [lastError, setLastError] = useState<string | null>(null);
   const [pendingConflict, setPendingConflict] = useState<ConflictInfo | null>(null);
   const [conflictResolver, setConflictResolver] = useState<((choice: 'keep-local' | 'keep-remote' | 'cancel') => void) | null>(null);
+  const [showReconnectPrompt, setShowReconnectPrompt] = useState(false);
+  const [pendingSyncReason, setPendingSyncReason] = useState<SyncReason | null>(null);
 
   /**
    * Refresh sync status from storage and engine
@@ -155,7 +160,15 @@ export function SyncProvider({ children }: SyncProviderProps) {
    * Trigger automatic sync (queued and debounced)
    */
   const triggerSync = useCallback((reason: SyncReason) => {
-    if (!syncEnabled || !isAuthenticated) {
+    if (!syncEnabled) {
+      return;
+    }
+
+    // Check if authenticated
+    if (!isAuthenticated) {
+      // Token expired - show reconnect prompt
+      setPendingSyncReason(reason);
+      setShowReconnectPrompt(true);
       return;
     }
 
@@ -175,6 +188,45 @@ export function SyncProvider({ children }: SyncProviderProps) {
   }, [conflictResolver]);
 
   /**
+   * Reconnect and resume pending sync
+   */
+  const reconnectAndSync = useCallback(async () => {
+    try {
+      setShowReconnectPrompt(false);
+      setSyncStatus('syncing');
+
+      // Initiate OAuth
+      await googleDriveService.initiateOAuth();
+
+      // Update authentication status
+      setIsAuthenticated(true);
+
+      // Resume the pending sync if there was one
+      if (pendingSyncReason) {
+        syncEngine.queueSyncOperation(pendingSyncReason);
+        setPendingSyncReason(null);
+      }
+
+      refreshStatus();
+    } catch (error) {
+      console.error('Failed to reconnect:', error);
+      setSyncStatus('error');
+      setLastError(error instanceof Error ? error.message : 'Failed to reconnect');
+      setShowReconnectPrompt(false);
+      setPendingSyncReason(null);
+      throw error;
+    }
+  }, [pendingSyncReason, refreshStatus]);
+
+  /**
+   * Dismiss reconnect prompt without reconnecting
+   */
+  const dismissReconnectPrompt = useCallback(() => {
+    setShowReconnectPrompt(false);
+    setPendingSyncReason(null);
+  }, []);
+
+  /**
    * Setup conflict resolution callback for SyncEngine
    */
   useEffect(() => {
@@ -191,6 +243,22 @@ export function SyncProvider({ children }: SyncProviderProps) {
 
     return () => {
       syncEngine.clearConflictResolutionCallback();
+    };
+  }, []);
+
+  /**
+   * Setup token expiration callback for SyncEngine
+   */
+  useEffect(() => {
+    const tokenExpiredCallback = (reason: SyncReason) => {
+      setPendingSyncReason(reason);
+      setShowReconnectPrompt(true);
+    };
+
+    syncEngine.setTokenExpiredCallback(tokenExpiredCallback);
+
+    return () => {
+      syncEngine.clearTokenExpiredCallback();
     };
   }, []);
 
@@ -253,11 +321,14 @@ export function SyncProvider({ children }: SyncProviderProps) {
     pendingSyncCount,
     lastError,
     pendingConflict,
+    showReconnectPrompt,
     enableSync,
     disableSync,
     manualSync,
     triggerSync,
     resolveConflict,
+    reconnectAndSync,
+    dismissReconnectPrompt,
     refreshStatus,
   };
 
