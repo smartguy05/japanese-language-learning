@@ -6,6 +6,7 @@ import { ProgressProvider } from './contexts/ProgressContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { Navigation } from './components/Navigation';
 import { Dashboard } from './pages/Dashboard';
+import { KanaMode } from './pages/KanaMode';
 import { WordMode } from './pages/WordMode';
 import { SentenceMode } from './pages/SentenceMode';
 import { FlashcardMode } from './pages/FlashcardMode';
@@ -25,6 +26,7 @@ function App() {
                   <main className="pt-4 md:pt-8">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/kana" element={<KanaMode />} />
                       <Route path="/words" element={<WordMode />} />
                       <Route path="/sentence" element={<SentenceMode />} />
                       <Route path="/flashcard" element={<FlashcardMode />} />
