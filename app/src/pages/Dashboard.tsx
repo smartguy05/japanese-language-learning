@@ -10,7 +10,7 @@ export function Dashboard() {
   const totalWords = words.filter(w => w.type === 'word').length;
   const totalSentences = words.filter(w => w.type === 'sentence').length;
   const wordsNeedingReview = words.filter(w => w.needsReview).length;
-  const accuracyRate = getAccuracyRate();
+  const accuracyRate = getAccuracyRate('sentence');
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
