@@ -4,7 +4,7 @@
  */
 
 import { nanoid } from 'nanoid';
-import type { SyncResult, SyncReason, PendingSyncOperation } from '../types';
+import type { SyncResult, SyncReason, PendingSyncOperation, AppData } from '../types';
 import { GoogleDriveService } from './GoogleDriveService';
 import {
   getSyncConfig,
@@ -15,6 +15,14 @@ import {
   getLastLocalChangeTime,
 } from '../utils/storage';
 
+export interface ConflictInfo {
+  localTimestamp: number;
+  remoteTimestamp: number;
+  fileId: string;
+  localData: AppData;
+  remoteData: AppData;
+}
+
 export class SyncEngine {
   private driveService: GoogleDriveService;
   private syncInProgress: boolean = false;
@@ -22,9 +30,34 @@ export class SyncEngine {
   private connectivityPollInterval: ReturnType<typeof setInterval> | null = null;
   private readonly DEBOUNCE_DELAY = 2000; // 2 seconds
   private readonly CONNECTIVITY_POLL_INTERVAL = 30000; // 30 seconds
+  private pendingConflict: ConflictInfo | null = null;
+  private conflictResolutionCallback: ((conflict: ConflictInfo) => Promise<'keep-local' | 'keep-remote' | 'cancel'>) | null = null;
 
   constructor(driveService: GoogleDriveService) {
     this.driveService = driveService;
+  }
+
+  /**
+   * Set callback for manual conflict resolution
+   */
+  setConflictResolutionCallback(
+    callback: (conflict: ConflictInfo) => Promise<'keep-local' | 'keep-remote' | 'cancel'>
+  ): void {
+    this.conflictResolutionCallback = callback;
+  }
+
+  /**
+   * Clear the conflict resolution callback (use automatic resolution)
+   */
+  clearConflictResolutionCallback(): void {
+    this.conflictResolutionCallback = null;
+  }
+
+  /**
+   * Get pending conflict (if any)
+   */
+  getPendingConflict(): ConflictInfo | null {
+    return this.pendingConflict;
   }
 
   /**
@@ -193,13 +226,13 @@ export class SyncEngine {
   }
 
   /**
-   * Resolve conflict using last-write-wins strategy
+   * Resolve conflict using last-write-wins strategy or manual resolution
    */
   private async resolveConflict(
     localTimestamp: number,
     remoteTimestamp: number,
     fileId: string
-  ): Promise<{ direction: 'upload' | 'download' | 'none'; type: 'local-newer' | 'remote-newer' | 'same' }> {
+  ): Promise<{ direction: 'upload' | 'download' | 'none'; type: 'local-newer' | 'remote-newer' | 'same' | 'manual' | 'cancelled' }> {
     const timeDiff = Math.abs(localTimestamp - remoteTimestamp);
     const TOLERANCE = 1000; // 1 second tolerance for clock drift
 
@@ -208,6 +241,38 @@ export class SyncEngine {
       return { direction: 'none', type: 'same' };
     }
 
+    // If we have a conflict resolution callback, use manual resolution
+    if (this.conflictResolutionCallback) {
+      const localData = exportAllDataForSync();
+      const remoteData = await this.driveService.downloadAppDataFile(fileId);
+
+      const conflictInfo: ConflictInfo = {
+        localTimestamp,
+        remoteTimestamp,
+        fileId,
+        localData,
+        remoteData,
+      };
+
+      const choice = await this.conflictResolutionCallback(conflictInfo);
+
+      if (choice === 'cancel') {
+        return { direction: 'none', type: 'cancelled' };
+      }
+
+      if (choice === 'keep-local') {
+        // Upload local data
+        await this.driveService.updateAppDataFile(fileId, localData);
+        return { direction: 'upload', type: 'manual' };
+      } else {
+        // Download remote data
+        importAllDataFromSync(remoteData.data);
+        setLastLocalChangeTime(remoteTimestamp);
+        return { direction: 'download', type: 'manual' };
+      }
+    }
+
+    // Automatic last-write-wins resolution
     if (localTimestamp > remoteTimestamp) {
       // Local is newer - upload
       const localData = exportAllDataForSync();

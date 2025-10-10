@@ -6,7 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { SyncStatus, SyncReason } from '../types';
 import { googleDriveService } from '../services/GoogleDriveService';
-import { syncEngine } from '../services/SyncEngine';
+import { syncEngine, type ConflictInfo } from '../services/SyncEngine';
 import { getSyncConfig, updateSyncConfig, clearSyncConfig } from '../utils/storage';
 
 interface SyncContextValue {
@@ -17,12 +17,14 @@ interface SyncContextValue {
   isAuthenticated: boolean;
   pendingSyncCount: number;
   lastError: string | null;
+  pendingConflict: ConflictInfo | null;
 
   // Actions
   enableSync: () => Promise<void>;
   disableSync: (deleteRemote: boolean) => Promise<void>;
   manualSync: () => Promise<void>;
   triggerSync: (reason: SyncReason) => void;
+  resolveConflict: (choice: 'keep-local' | 'keep-remote' | 'cancel') => void;
 
   // Utilities
   refreshStatus: () => void;
@@ -41,6 +43,8 @@ export function SyncProvider({ children }: SyncProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [pendingConflict, setPendingConflict] = useState<ConflictInfo | null>(null);
+  const [conflictResolver, setConflictResolver] = useState<((choice: 'keep-local' | 'keep-remote' | 'cancel') => void) | null>(null);
 
   /**
    * Refresh sync status from storage and engine
@@ -160,6 +164,37 @@ export function SyncProvider({ children }: SyncProviderProps) {
   }, [syncEnabled, isAuthenticated, refreshStatus]);
 
   /**
+   * Resolve pending conflict
+   */
+  const resolveConflict = useCallback((choice: 'keep-local' | 'keep-remote' | 'cancel') => {
+    if (conflictResolver) {
+      conflictResolver(choice);
+      setPendingConflict(null);
+      setConflictResolver(null);
+    }
+  }, [conflictResolver]);
+
+  /**
+   * Setup conflict resolution callback for SyncEngine
+   */
+  useEffect(() => {
+    const conflictCallback = async (conflict: ConflictInfo): Promise<'keep-local' | 'keep-remote' | 'cancel'> => {
+      return new Promise((resolve) => {
+        setPendingConflict(conflict);
+        setConflictResolver(() => (choice: 'keep-local' | 'keep-remote' | 'cancel') => {
+          resolve(choice);
+        });
+      });
+    };
+
+    syncEngine.setConflictResolutionCallback(conflictCallback);
+
+    return () => {
+      syncEngine.clearConflictResolutionCallback();
+    };
+  }, []);
+
+  /**
    * Initialize: load sync status and perform app load sync
    */
   useEffect(() => {
@@ -217,10 +252,12 @@ export function SyncProvider({ children }: SyncProviderProps) {
     isAuthenticated,
     pendingSyncCount,
     lastError,
+    pendingConflict,
     enableSync,
     disableSync,
     manualSync,
     triggerSync,
+    resolveConflict,
     refreshStatus,
   };
 

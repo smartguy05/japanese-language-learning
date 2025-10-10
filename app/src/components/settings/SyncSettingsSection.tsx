@@ -3,6 +3,7 @@ import { useSyncContext } from '../../contexts/SyncContext';
 import { Button } from '../common/Button';
 import { Card } from '../common/Card';
 import { SyncPrivacyModal } from './SyncPrivacyModal';
+import { SyncConflictResolutionModal } from './SyncConflictResolutionModal';
 
 export function SyncSettingsSection() {
   const {
@@ -15,6 +16,8 @@ export function SyncSettingsSection() {
     manualSync,
     lastError,
     pendingSyncCount,
+    pendingConflict,
+    resolveConflict,
   } = useSyncContext();
 
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
@@ -23,6 +26,7 @@ export function SyncSettingsSection() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
 
   const handleEnableSync = async () => {
     try {
@@ -58,6 +62,23 @@ export function SyncSettingsSection() {
     } finally {
       setIsDisconnecting(false);
     }
+  };
+
+  const handleResolveConflict = async (choice: 'keep-local' | 'keep-remote') => {
+    try {
+      setIsResolvingConflict(true);
+      resolveConflict(choice);
+      // Wait a bit for the sync to complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error('Failed to resolve conflict:', error);
+    } finally {
+      setIsResolvingConflict(false);
+    }
+  };
+
+  const handleCancelConflict = () => {
+    resolveConflict('cancel');
   };
 
   const getRelativeTime = (timestamp: number | null): string => {
@@ -296,6 +317,26 @@ export function SyncSettingsSection() {
       <SyncPrivacyModal
         isOpen={showPrivacyModal}
         onClose={() => setShowPrivacyModal(false)}
+      />
+
+      {/* Conflict Resolution Modal */}
+      <SyncConflictResolutionModal
+        isOpen={!!pendingConflict}
+        onClose={handleCancelConflict}
+        conflictData={pendingConflict ? {
+          local: {
+            wordCount: pendingConflict.localData.data.words.length,
+            lastModified: pendingConflict.localTimestamp,
+            hasProgress: pendingConflict.localData.data.progress !== null,
+          },
+          remote: {
+            wordCount: pendingConflict.remoteData.data.words.length,
+            lastModified: pendingConflict.remoteTimestamp,
+            hasProgress: pendingConflict.remoteData.data.progress !== null,
+          }
+        } : null}
+        onResolve={handleResolveConflict}
+        isResolving={isResolvingConflict}
       />
     </>
   );
