@@ -59,6 +59,7 @@ export function KanaMode() {
       incorrectCount: 0,
       createdAt: new Date().toISOString(),
       lastReviewed: new Date().toISOString(),
+      lastModified: Date.now(),
     }));
   }, [flashcardCharacters]);
 

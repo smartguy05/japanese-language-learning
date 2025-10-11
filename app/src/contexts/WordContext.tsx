@@ -1,18 +1,10 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Word, ExportData, AppSettings } from '../types';
+import type { Word, ExportData, AppSettings, SyncReason } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_SETTINGS, DEFAULT_PROGRESS } from '../utils/constants';
 import { validateWord } from '../utils/validation';
-
-// Import sync context (wrapped in try-catch to avoid circular dependency issues)
-let syncContext: typeof import('./SyncContext') | null = null;
-try {
-  syncContext = require('./SyncContext');
-} catch {
-  // Sync context not available yet (during initialization)
-}
 
 interface WordContextValue {
   words: Word[];
@@ -38,16 +30,21 @@ export function WordProvider({ children }: { children: ReactNode }) {
     return saved.filter(validateWord);
   });
 
-  // Try to get sync context (may not be available if not wrapped in SyncProvider)
-  let triggerSync: ((reason: string) => void) | null = null;
-  try {
-    if (syncContext) {
-      const sync = syncContext.useSyncContext();
-      triggerSync = sync.triggerSync;
-    }
-  } catch {
-    // SyncContext not available
-  }
+  // Import sync context dynamically to avoid circular dependency
+  const [triggerSync, setTriggerSync] = useState<((reason: SyncReason) => void) | null>(null);
+
+  useEffect(() => {
+    import('./SyncContext').then(module => {
+      try {
+        const sync = module.useSyncContext();
+        setTriggerSync(() => sync.triggerSync);
+      } catch {
+        // SyncContext not available or not wrapped in provider
+      }
+    }).catch(() => {
+      // Module not available
+    });
+  }, []);
 
   // Persist to localStorage whenever words change
   useEffect(() => {
@@ -152,6 +149,7 @@ export function WordProvider({ children }: { children: ReactNode }) {
       const mergedSettings = {
         ...data.data.settings,
         theme: currentTheme || 'dark',
+        lastModified: Date.now(),
       };
 
       setItem(STORAGE_KEYS.SETTINGS, mergedSettings);

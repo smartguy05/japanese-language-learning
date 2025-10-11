@@ -1,15 +1,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect } from 'react';
-import type { AppSettings } from '../types/settings';
+import type { AppSettings, SyncReason } from '../types';
 import { getItem, setItem } from '../utils/storage';
-
-// Import sync context (wrapped in try-catch to avoid circular dependency issues)
-let syncContext: typeof import('./SyncContext') | null = null;
-try {
-  syncContext = require('./SyncContext');
-} catch {
-  // Sync context not available yet (during initialization)
-}
 
 const STORAGE_KEY = 'jp-learn-settings';
 
@@ -40,16 +32,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return getItem<AppSettings>(STORAGE_KEY, defaultSettings);
   });
 
-  // Try to get sync context (may not be available if not wrapped in SyncProvider)
-  let triggerSync: ((reason: string) => void) | null = null;
-  try {
-    if (syncContext) {
-      const sync = syncContext.useSyncContext();
-      triggerSync = sync.triggerSync;
-    }
-  } catch {
-    // SyncContext not available
-  }
+  // Import sync context dynamically to avoid circular dependency
+  const [triggerSync, setTriggerSync] = useState<((reason: SyncReason) => void) | null>(null);
+
+  useEffect(() => {
+    import('./SyncContext').then(module => {
+      try {
+        const sync = module.useSyncContext();
+        setTriggerSync(() => sync.triggerSync);
+      } catch {
+        // SyncContext not available or not wrapped in provider
+      }
+    }).catch(() => {
+      // Module not available
+    });
+  }, []);
 
   useEffect(() => {
     setItem(STORAGE_KEY, settings);

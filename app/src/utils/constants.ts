@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   lastModelsFetch: null,
   lastExportDate: null,
   dataVersion: '1.0',
+  lastModified: Date.now(),
 };
 
 export const DEFAULT_PROGRESS = {
@@ -33,4 +34,5 @@ export const DEFAULT_PROGRESS = {
   dailyStreak: 0,
   lastStudyDate: new Date().toISOString(),
   totalStudyTime: 0,
+  lastModified: Date.now(),
 };

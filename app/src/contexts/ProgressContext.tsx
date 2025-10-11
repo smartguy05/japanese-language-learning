@@ -1,16 +1,8 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { UserProgress, Mode } from '../types';
+import type { UserProgress, Mode, SyncReason } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_PROGRESS } from '../utils/constants';
-
-// Import sync context (wrapped in try-catch to avoid circular dependency issues)
-let syncContext: typeof import('./SyncContext') | null = null;
-try {
-  syncContext = require('./SyncContext');
-} catch {
-  // Sync context not available yet (during initialization)
-}
 
 interface ProgressContextValue {
   progress: UserProgress;
@@ -32,16 +24,21 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return getItem<UserProgress>(STORAGE_KEYS.PROGRESS, DEFAULT_PROGRESS);
   });
 
-  // Try to get sync context (may not be available if not wrapped in SyncProvider)
-  let triggerSync: ((reason: string) => void) | null = null;
-  try {
-    if (syncContext) {
-      const sync = syncContext.useSyncContext();
-      triggerSync = sync.triggerSync;
-    }
-  } catch {
-    // SyncContext not available
-  }
+  // Import sync context dynamically to avoid circular dependency
+  const [triggerSync, setTriggerSync] = useState<((reason: SyncReason) => void) | null>(null);
+
+  useEffect(() => {
+    import('./SyncContext').then(module => {
+      try {
+        const sync = module.useSyncContext();
+        setTriggerSync(() => sync.triggerSync);
+      } catch {
+        // SyncContext not available or not wrapped in provider
+      }
+    }).catch(() => {
+      // Module not available
+    });
+  }, []);
 
   // Persist to localStorage whenever progress changes
   useEffect(() => {
