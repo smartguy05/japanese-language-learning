@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { nanoid } from 'nanoid';
-import type { Word, ExportData, AppSettings } from '../types';
+import type { Word, ExportData, AppSettings, SyncReason } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_SETTINGS, DEFAULT_PROGRESS } from '../utils/constants';
 import { validateWord } from '../utils/validation';
@@ -30,10 +30,31 @@ export function WordProvider({ children }: { children: ReactNode }) {
     return saved.filter(validateWord);
   });
 
+  // Import sync context dynamically to avoid circular dependency
+  const [triggerSync, setTriggerSync] = useState<((reason: SyncReason) => void) | null>(null);
+
+  useEffect(() => {
+    import('./SyncContext').then(module => {
+      try {
+        const sync = module.useSyncContext();
+        setTriggerSync(() => sync.triggerSync);
+      } catch {
+        // SyncContext not available or not wrapped in provider
+      }
+    }).catch(() => {
+      // Module not available
+    });
+  }, []);
+
   // Persist to localStorage whenever words change
   useEffect(() => {
     setItem(STORAGE_KEYS.WORDS, words);
-  }, [words]);
+
+    // Trigger sync after saving to localStorage
+    if (triggerSync) {
+      triggerSync('word-change');
+    }
+  }, [words, triggerSync]);
 
   const getWordsByCategory = useCallback((category: string): Word[] => {
     return words.filter(word => word.category === category);
@@ -74,19 +95,22 @@ export function WordProvider({ children }: { children: ReactNode }) {
     return shuffled.slice(0, Math.min(count, shuffled.length));
   }, [words]);
 
-  const addWord = useCallback((word: Omit<Word, 'id' | 'createdAt'>) => {
+  const addWord = useCallback((word: Omit<Word, 'id' | 'createdAt' | 'lastModified'>) => {
+    const now = Date.now();
     const newWord: Word = {
       ...word,
       id: nanoid(),
       createdAt: new Date().toISOString(),
+      lastModified: now,
     };
     setWords(prev => [...prev, newWord]);
   }, []);
 
   const updateWord = useCallback((id: string, updates: Partial<Word>) => {
+    const now = Date.now();
     setWords(prev =>
       prev.map(word =>
-        word.id === id ? { ...word, ...updates } : word
+        word.id === id ? { ...word, ...updates, lastModified: now } : word
       )
     );
   }, []);
@@ -95,12 +119,14 @@ export function WordProvider({ children }: { children: ReactNode }) {
     setWords(prev => prev.filter(word => word.id !== id));
   }, []);
 
-  const bulkAddWords = useCallback((newWords: Omit<Word, 'id' | 'createdAt'>[]) => {
-    const now = new Date().toISOString();
+  const bulkAddWords = useCallback((newWords: Omit<Word, 'id' | 'createdAt' | 'lastModified'>[]) => {
+    const nowISO = new Date().toISOString();
+    const nowTimestamp = Date.now();
     const wordsWithIds: Word[] = newWords.map(word => ({
       ...word,
       id: nanoid(),
-      createdAt: now,
+      createdAt: nowISO,
+      lastModified: nowTimestamp,
     }));
     setWords(prev => [...prev, ...wordsWithIds]);
   }, []);
@@ -123,6 +149,7 @@ export function WordProvider({ children }: { children: ReactNode }) {
       const mergedSettings = {
         ...data.data.settings,
         theme: currentTheme || 'dark',
+        lastModified: Date.now(),
       };
 
       setItem(STORAGE_KEYS.SETTINGS, mergedSettings);

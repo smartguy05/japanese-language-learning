@@ -21,6 +21,7 @@ export interface Word {
   // Metadata
   lastReviewed: string; // ISO 8601 date string
   createdAt: string; // ISO 8601 date string
+  lastModified: number; // Unix timestamp (ms) for sync conflict resolution
 }
 
 export interface ExportData {

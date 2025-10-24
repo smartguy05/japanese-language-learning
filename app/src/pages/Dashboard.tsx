@@ -10,7 +10,7 @@ export function Dashboard() {
   const totalWords = words.filter(w => w.type === 'word').length;
   const totalSentences = words.filter(w => w.type === 'sentence').length;
   const wordsNeedingReview = words.filter(w => w.needsReview).length;
-  const accuracyRate = getAccuracyRate();
+  const accuracyRate = getAccuracyRate('sentence');
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-6">
@@ -57,9 +57,9 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Link to="/alphabet">
+        <Link to="/words">
           <Card variant="elevated" padding="large" className="hover:scale-105 transition-transform cursor-pointer">
-            <h3 className="text-lg font-semibold text-text-primary mb-2">Alphabet Mode</h3>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Word Mode</h3>
             <p className="text-text-secondary text-sm">Learn characters with romanji reveal</p>
           </Card>
         </Link>

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { UserProgress, Mode } from '../types';
+import type { UserProgress, Mode, SyncReason } from '../types';
 import { getItem, setItem } from '../utils/storage';
 import { STORAGE_KEYS, DEFAULT_PROGRESS } from '../utils/constants';
 
@@ -24,10 +24,31 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     return getItem<UserProgress>(STORAGE_KEYS.PROGRESS, DEFAULT_PROGRESS);
   });
 
+  // Import sync context dynamically to avoid circular dependency
+  const [triggerSync, setTriggerSync] = useState<((reason: SyncReason) => void) | null>(null);
+
+  useEffect(() => {
+    import('./SyncContext').then(module => {
+      try {
+        const sync = module.useSyncContext();
+        setTriggerSync(() => sync.triggerSync);
+      } catch {
+        // SyncContext not available or not wrapped in provider
+      }
+    }).catch(() => {
+      // Module not available
+    });
+  }, []);
+
   // Persist to localStorage whenever progress changes
   useEffect(() => {
     setItem(STORAGE_KEYS.PROGRESS, progress);
-  }, [progress]);
+
+    // Trigger sync after saving to localStorage
+    if (triggerSync) {
+      triggerSync('progress-change');
+    }
+  }, [progress, triggerSync]);
 
   const incrementScore = useCallback((mode: Mode, correct: boolean) => {
     setProgress(prev => {
@@ -44,6 +65,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
           },
         },
         lastStudyDate: new Date().toISOString(),
+        lastModified: Date.now(),
       };
     });
   }, []);
@@ -52,7 +74,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setProgress(prev => ({
       ...prev,
       sessionScore: {
-        alphabetMode: { correct: 0, incorrect: 0 },
+        wordMode: { correct: 0, incorrect: 0 },
         sentenceMode: { correct: 0, incorrect: 0 },
         flashcardMode: { correct: 0, incorrect: 0 },
       },
@@ -114,6 +136,7 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     setProgress(prev => ({
       ...prev,
       ...stats,
+      lastModified: Date.now(),
     }));
   }, []);
 

@@ -5,6 +5,8 @@ import { useWords } from '../../contexts/WordContext';
 import { generateWordsWithClaude } from '../../utils/claudeApi';
 import type { Word } from '../../types/word';
 
+type CharacterType = 'both' | 'hiragana' | 'katakana';
+
 interface WordGeneratorProps {
   type: 'word' | 'sentence';
   currentCategory: string;
@@ -20,9 +22,11 @@ export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
     return categories.length > 0 ? categories : ['Greetings'];
   }, [words]);
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState(3);
   const [selectedCategory, setSelectedCategory] = useState(currentCategory || 'Greetings');
+  const [characterType, setCharacterType] = useState<CharacterType>('both');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -61,6 +65,7 @@ export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
         existingWords: words,
         currentCategory: selectedCategory,
         model: settings.claudeModel || undefined,
+        characterType,
       });
 
       bulkAddWords(generatedWords as Word[]);
@@ -74,11 +79,21 @@ export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
 
   return (
     <Card variant="default" padding="large" className="mb-6">
-      <h2 className="text-xl font-semibold text-text-primary mb-4">
-        Generate New {type === 'word' ? 'Words' : 'Sentences'} with AI
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-text-primary">
+          Generate New {type === 'word' ? 'Words' : 'Sentences'} with AI
+        </h2>
+        <Button
+          onClick={() => setIsExpanded(!isExpanded)}
+          variant="secondary"
+          size="small"
+        >
+          {isExpanded ? 'Hide' : 'Show'}
+        </Button>
+      </div>
 
-      <div className="space-y-4">
+      {isExpanded && (
+        <div className="space-y-4 mt-4">
         {/* Category Selection */}
         <div>
           <label className="block text-text-primary font-medium mb-2">
@@ -137,6 +152,25 @@ export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
           </div>
         </div>
 
+        {/* Character Type Selection */}
+        <div>
+          <label htmlFor="character-type" className="block text-text-primary font-medium mb-2">
+            Character Type
+          </label>
+          <Select
+            id="character-type"
+            value={characterType}
+            onChange={(e) => setCharacterType(e.target.value as CharacterType)}
+          >
+            <option value="both">Both (Hiragana & Katakana)</option>
+            <option value="hiragana">Hiragana Only</option>
+            <option value="katakana">Katakana Only</option>
+          </Select>
+          <p className="text-xs text-text-secondary mt-1">
+            Choose which Japanese script to use for generated words
+          </p>
+        </div>
+
         {/* Generate Button */}
         <Button
           onClick={handleGenerate}
@@ -160,7 +194,8 @@ export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
         <p className="text-text-secondary text-xs">
           Note: Generated {type}s will use only hiragana (ひらがな) or katakana (カタカナ) - no kanji.
         </p>
-      </div>
+        </div>
+      )}
     </Card>
   );
 }

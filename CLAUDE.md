@@ -186,13 +186,14 @@ npm run test
 
 ## Development Phases
 
-The project follows a 6-phase plan (see `docs/plan.md`):
+The project follows a multi-phase plan (see `docs/plan.md`):
 1. **Days 1-4**: Foundation (React setup, theme system, data layer, routing)
 2. **Days 5-9**: Alphabet Mode (character mapping, reveal system)
 3. **Days 10-13**: Sentence Mode (quiz generator, fireworks animation)
 4. **Days 14-16**: Flashcard Mode (flip animation, swipe gestures)
 5. **Days 17-18**: Word Management (CRUD UI, import/export)
 6. **Days 19-21**: PWA & Polish (service worker, testing, deployment)
+7. **Days 22-25** (Optional): Google Drive Sync (auto-sync, OAuth, offline queue)
 
 ## Important Files to Reference
 
@@ -201,6 +202,8 @@ The project follows a 6-phase plan (see `docs/plan.md`):
 - **`docs/tasks.md`**: Granular task breakdown (93 tasks, ~126-158 hours)
 - **`docs/goals.md`**: Success criteria and KPIs
 - **`docs/progress.md`**: Progress tracking template (not started yet)
+- **`docs/google-drive-sync.md`**: Complete specification for optional Google Drive sync feature
+- **`docs/tasks-google-drive-sync.md`**: Task breakdown for sync implementation (100 tasks, ~26-32 hours)
 
 ## Gotchas & Edge Cases
 

@@ -5,7 +5,8 @@ export function Navigation() {
 
   const navItems = [
     { path: '/', label: 'Home', icon: '🏠' },
-    { path: '/alphabet', label: 'Alphabet', icon: 'あ' },
+    { path: '/kana', label: 'Kana', icon: 'あ' },
+    { path: '/words', label: 'Words', icon: '語' },
     { path: '/sentence', label: 'Sentence', icon: '文' },
     { path: '/flashcard', label: 'Cards', icon: '🃏' },
     { path: '/manage', label: 'Manage', icon: '📝' },
@@ -66,7 +67,7 @@ export function Navigation() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-bg-secondary dark:bg-bg-secondary-dark border-t border-border-subtle z-40">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-6 h-16">
           {navItems.map(item => (
             <Link
               key={item.path}

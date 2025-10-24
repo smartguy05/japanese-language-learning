@@ -8,6 +8,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { downloadJSON, importData } from '../utils/importExport';
 import { generateSeedData } from '../utils/seedData';
 import { validateApiKey, fetchAnthropicModels } from '../utils/claudeApi';
+import { SyncSettingsSection } from '../components/settings/SyncSettingsSection';
 
 export function Settings() {
   const { theme, toggleTheme } = useTheme();
@@ -392,6 +393,11 @@ export function Settings() {
         </div>
       </Card>
 
+      {/* Google Drive Sync */}
+      <div className="mb-6">
+        <SyncSettingsSection />
+      </div>
+
       {/* About */}
       <Card variant="default" padding="large">
         <h2 className="text-xl font-semibold text-text-primary mb-4">About</h2>
@@ -402,7 +408,7 @@ export function Settings() {
           A Progressive Web Application for learning Japanese through interactive study modes.
         </p>
         <p className="text-text-secondary text-sm mt-4">
-          • Alphabet Mode - Character reveal system<br />
+          • Word Mode - Character reveal system<br />
           • Sentence Mode - Comprehension quizzes<br />
           • Flashcard Mode - Traditional review<br />
           • Completely offline-first with no backend

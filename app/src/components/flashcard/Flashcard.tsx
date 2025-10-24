@@ -8,9 +8,10 @@ interface FlashcardProps {
   direction: 'japaneseToEnglish' | 'englishToJapanese';
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
+  hideRomanji?: boolean; // Hide romanji for kana practice mode
 }
 
-export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: FlashcardProps) {
+export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight, hideRomanji = false }: FlashcardProps) {
   const { speak, isSpeaking } = useSpeech();
   const [isFlipped, setIsFlipped] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -110,7 +111,7 @@ export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: Flashc
             } text-text-primary mb-4`}>
               {frontContent}
             </p>
-            {direction === 'japaneseToEnglish' && (
+            {direction === 'japaneseToEnglish' && !hideRomanji && (
               <p className="text-xl text-text-secondary font-mono">{displayWord.romanji}</p>
             )}
             <p className="text-xs text-text-tertiary mt-8">Click or tap to flip</p>
@@ -139,7 +140,7 @@ export function Flashcard({ word, direction, onSwipeLeft, onSwipeRight }: Flashc
             } text-text-primary mb-4`}>
               {backContent}
             </p>
-            {direction === 'englishToJapanese' && (
+            {direction === 'englishToJapanese' && !hideRomanji && (
               <p className="text-xl text-text-secondary font-mono">{displayWord.romanji}</p>
             )}
             <p className="text-xs text-text-tertiary mt-8">Click or tap to flip back</p>

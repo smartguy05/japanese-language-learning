@@ -6,13 +6,13 @@ import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 import { useWords } from '../../contexts/WordContext';
 
-interface AlphabetQuizViewProps {
+interface WordQuizViewProps {
   words: Word[];
   onComplete: () => void;
   onBackToStudy: () => void;
 }
 
-export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQuizViewProps) {
+export function WordQuizView({ words, onComplete, onBackToStudy }: WordQuizViewProps) {
   const { speak, isSpeaking } = useSpeech();
   const { updateWord } = useWords();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -160,6 +160,16 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
               </button>
             ))}
           </div>
+
+          {/* Complete Romanji when all characters revealed */}
+          {allRevealed && (
+            <div className="mb-6 p-4 bg-indigo bg-opacity-10 rounded-lg border border-indigo border-opacity-20">
+              <p className="text-xs text-text-tertiary mb-2">Romanji (Complete)</p>
+              <p className="text-2xl font-mono text-indigo">
+                {currentWord.romanji}
+              </p>
+            </div>
+          )}
 
           {/* English translation */}
           <div className="mt-8 p-4 bg-bg-secondary dark:bg-bg-secondary-dark rounded-lg">

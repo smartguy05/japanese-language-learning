@@ -2,13 +2,13 @@ import type { Word } from '../../types/word';
 import { Card, Button, SpeakerButton } from '../common';
 import { useSpeech } from '../../hooks/useSpeech';
 
-interface AlphabetStudyViewProps {
+interface WordStudyViewProps {
   words: Word[];
   onStartQuiz: () => void;
   onBack: () => void;
 }
 
-export function AlphabetStudyView({ words, onStartQuiz, onBack }: AlphabetStudyViewProps) {
+export function WordStudyView({ words, onStartQuiz, onBack }: WordStudyViewProps) {
   const { speak, isSpeaking } = useSpeech();
 
   if (words.length === 0) {
@@ -31,7 +31,7 @@ export function AlphabetStudyView({ words, onStartQuiz, onBack }: AlphabetStudyV
     <div className="max-w-4xl mx-auto p-4 md:p-6">
       <Card variant="default" padding="large" className="mb-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-text-primary">Study - Alphabet Mode</h2>
+          <h2 className="text-2xl font-bold text-text-primary">Study - Word Mode</h2>
           <Button onClick={onStartQuiz} variant="primary">
             Start Quiz
           </Button>
