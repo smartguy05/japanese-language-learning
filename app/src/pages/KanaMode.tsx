@@ -50,7 +50,7 @@ export function KanaMode() {
       japanese: char.kana,
       romanji: char.romanji,
       english: char.romanji, // Use romanji as "english" for kana
-      day: 1,
+      category: 'Kana',
       type: 'word' as const,
       mastered: false,
       needsReview: false,

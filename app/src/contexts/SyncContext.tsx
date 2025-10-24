@@ -139,19 +139,35 @@ export function SyncProvider({ children }: SyncProviderProps) {
 
   /**
    * Trigger manual sync
+   * If token is expired, automatically re-authenticate and then sync
    */
   const manualSync = useCallback(async () => {
-    if (!syncEnabled || !isAuthenticated) {
-      throw new Error('Sync not enabled or not authenticated');
+    if (!syncEnabled) {
+      throw new Error('Sync not enabled');
     }
 
     try {
       setSyncStatus('syncing');
+
+      // Check if we need to re-authenticate
+      if (!isAuthenticated) {
+        console.log('Token expired, re-authenticating...');
+
+        // Initiate OAuth to get a fresh token
+        await googleDriveService.initiateOAuth();
+
+        // Update authentication status
+        setIsAuthenticated(true);
+      }
+
+      // Perform the sync
       await syncEngine.manualSync();
       refreshStatus();
     } catch (error) {
       console.error('Manual sync failed:', error);
       setSyncStatus('error');
+      setLastError(error instanceof Error ? error.message : 'Manual sync failed');
+      refreshStatus();
       throw error;
     }
   }, [syncEnabled, isAuthenticated, refreshStatus]);
