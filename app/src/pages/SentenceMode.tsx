@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useWords } from '../contexts/WordContext';
-import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { Card, Button, Select } from '../components/common';
 import { SentenceStudyView } from '../components/sentence/SentenceStudyView';
@@ -8,23 +7,34 @@ import { SentenceQuizView } from '../components/sentence/SentenceQuizView';
 import { WordGenerator } from '../components/generate';
 
 type View = 'selection' | 'study' | 'quiz' | 'results';
-type FilterType = 'all' | 'day' | 'needsReview';
+type FilterType = 'all' | 'category' | 'needsReview' | 'random';
 
 export function SentenceMode() {
   const { words } = useWords();
-  const { progress } = useProgress();
   const { hasApiKey } = useSettings();
 
   const [view, setView] = useState<View>('selection');
-  const [filterType, setFilterType] = useState<FilterType>('day');
-  const [selectedDay, setSelectedDay] = useState(progress.currentDay);
+  const [filterType, setFilterType] = useState<FilterType>('category');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [quizResults, setQuizResults] = useState<{ correct: number; total: number } | null>(null);
+  const [randomCount, setRandomCount] = useState(10);
+  const [limitCount, setLimitCount] = useState(10);
 
-  // Get unique days from sentences
-  const availableDays = useMemo(() => {
-    const days = Array.from(new Set(words.filter(w => w.type === 'sentence').map(w => w.day))).sort((a, b) => a - b);
-    return days.length > 0 ? days : [1]; // Default to day 1 if no sentences
+  // Get unique categories from sentences
+  const availableCategories = useMemo(() => {
+    const categories = Array.from(new Set(words.filter(w => w.type === 'sentence').map(w => w.category))).sort();
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0]);
+    }
+    return categories.length > 0 ? categories : ['Greetings'];
   }, [words]);
+
+  // Initialize selectedCategory when availableCategories change
+  useMemo(() => {
+    if (availableCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(availableCategories[0]);
+    }
+  }, [availableCategories, selectedCategory]);
 
   // Filter sentences based on selection
   const filteredSentences = useMemo(() => {
@@ -33,17 +43,28 @@ export function SentenceMode() {
     let filtered;
     if (filterType === 'all') {
       filtered = sentenceTypeItems;
-    } else if (filterType === 'day') {
-      filtered = sentenceTypeItems.filter(w => w.day === selectedDay);
+    } else if (filterType === 'category') {
+      filtered = sentenceTypeItems.filter(w => w.category === selectedCategory);
     } else if (filterType === 'needsReview') {
       filtered = sentenceTypeItems.filter(w => w.needsReview);
+    } else if (filterType === 'random') {
+      filtered = sentenceTypeItems;
     } else {
       filtered = sentenceTypeItems;
     }
 
     // Shuffle the filtered sentences for random order
-    return [...filtered].sort(() => Math.random() - 0.5);
-  }, [words, filterType, selectedDay]);
+    const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+
+    // Apply limit for random or category/all modes
+    if (filterType === 'random') {
+      return shuffled.slice(0, randomCount);
+    } else if (filterType === 'category' || filterType === 'all') {
+      return shuffled.slice(0, limitCount);
+    }
+
+    return shuffled;
+  }, [words, filterType, selectedCategory, randomCount, limitCount]);
 
   // All sentences for distractor generation
   const allSentences = useMemo(() => words.filter(w => w.type === 'sentence'), [words]);
@@ -72,7 +93,7 @@ export function SentenceMode() {
       <div className="max-w-4xl mx-auto p-4 md:p-6">
         {/* Sentence Generator - Only visible if API key is set */}
         {hasApiKey && (
-          <WordGenerator type="sentence" currentDay={selectedDay} />
+          <WordGenerator type="sentence" currentCategory={selectedCategory} />
         )}
 
         <Card variant="elevated" padding="large">
@@ -87,13 +108,13 @@ export function SentenceMode() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 Select Sentences
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Button
-                  variant={filterType === 'day' ? 'primary' : 'secondary'}
-                  onClick={() => setFilterType('day')}
+                  variant={filterType === 'category' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('category')}
                   className="w-full"
                 >
-                  By Day
+                  By Category
                 </Button>
                 <Button
                   variant={filterType === 'all' ? 'primary' : 'secondary'}
@@ -101,6 +122,13 @@ export function SentenceMode() {
                   className="w-full"
                 >
                   All Sentences
+                </Button>
+                <Button
+                  variant={filterType === 'random' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('random')}
+                  className="w-full"
+                >
+                  Random
                 </Button>
                 <Button
                   variant={filterType === 'needsReview' ? 'primary' : 'secondary'}
@@ -112,22 +140,62 @@ export function SentenceMode() {
               </div>
             </div>
 
-            {filterType === 'day' && (
+            {filterType === 'category' && (
               <div>
-                <label htmlFor="day-select" className="block text-sm font-medium text-text-primary mb-2">
-                  Day
+                <label htmlFor="category-select" className="block text-sm font-medium text-text-primary mb-2">
+                  Category
                 </label>
                 <Select
-                  id="day-select"
-                  value={selectedDay.toString()}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  id="category-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  {availableDays.map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
+                  {availableCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
                     </option>
                   ))}
                 </Select>
+              </div>
+            )}
+
+            {filterType === 'random' && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Number of Sentences: {randomCount}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={randomCount}
+                  onChange={(e) => setRandomCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
+              </div>
+            )}
+
+            {(filterType === 'category' || filterType === 'all') && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Limit to: {limitCount} sentences
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={limitCount}
+                  onChange={(e) => setLimitCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
               </div>
             )}
           </div>

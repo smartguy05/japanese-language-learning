@@ -8,7 +8,7 @@ import { validateWord } from '../utils/validation';
 
 interface WordContextValue {
   words: Word[];
-  getWordsByDay: (day: number) => Word[];
+  getWordsByCategory: (category: string) => Word[];
   getWordsByType: (type: 'word' | 'sentence') => Word[];
   getWordsNeedingReview: () => Word[];
   getMasteredWords: () => Word[];
@@ -35,8 +35,8 @@ export function WordProvider({ children }: { children: ReactNode }) {
     setItem(STORAGE_KEYS.WORDS, words);
   }, [words]);
 
-  const getWordsByDay = useCallback((day: number): Word[] => {
-    return words.filter(word => word.day === day);
+  const getWordsByCategory = useCallback((category: string): Word[] => {
+    return words.filter(word => word.category === category);
   }, [words]);
 
   const getWordsByType = useCallback((type: 'word' | 'sentence'): Word[] => {
@@ -55,8 +55,8 @@ export function WordProvider({ children }: { children: ReactNode }) {
     let filtered = words;
 
     if (filters) {
-      if (filters.day !== undefined) {
-        filtered = filtered.filter(w => w.day === filters.day);
+      if (filters.category !== undefined) {
+        filtered = filtered.filter(w => w.category === filters.category);
       }
       if (filters.type !== undefined) {
         filtered = filtered.filter(w => w.type === filters.type);
@@ -157,7 +157,7 @@ export function WordProvider({ children }: { children: ReactNode }) {
     <WordContext.Provider
       value={{
         words,
-        getWordsByDay,
+        getWordsByCategory,
         getWordsByType,
         getWordsNeedingReview,
         getMasteredWords,

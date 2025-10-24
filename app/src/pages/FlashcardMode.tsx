@@ -1,27 +1,37 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useWords } from '../contexts/WordContext';
-import { useProgress } from '../contexts/ProgressContext';
 import { Card, Button, Select } from '../components/common';
 import { Flashcard } from '../components/flashcard/Flashcard';
 
-type FilterType = 'all' | 'day' | 'needsReview' | 'words' | 'sentences';
+type FilterType = 'all' | 'category' | 'needsReview' | 'words' | 'sentences' | 'random';
 type Direction = 'japaneseToEnglish' | 'englishToJapanese' | 'random';
 
 export function FlashcardMode() {
   const { words } = useWords();
-  const { progress } = useProgress();
 
   const [view, setView] = useState<'selection' | 'study'>('selection');
   const [filterType, setFilterType] = useState<FilterType>('all');
-  const [selectedDay, setSelectedDay] = useState(progress.currentDay);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [direction, setDirection] = useState<Direction>('japaneseToEnglish');
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [randomCount, setRandomCount] = useState(10);
+  const [limitCount, setLimitCount] = useState(10);
 
-  // Get unique days
-  const availableDays = useMemo(() => {
-    const days = Array.from(new Set(words.map(w => w.day))).sort((a, b) => a - b);
-    return days.length > 0 ? days : [1]; // Default to day 1 if no items
+  // Get unique categories
+  const availableCategories = useMemo(() => {
+    const categories = Array.from(new Set(words.map(w => w.category))).sort();
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0]);
+    }
+    return categories.length > 0 ? categories : ['Greetings'];
   }, [words]);
+
+  // Initialize selectedCategory when availableCategories change
+  useMemo(() => {
+    if (availableCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(availableCategories[0]);
+    }
+  }, [availableCategories, selectedCategory]);
 
   // Filter items based on selection
   const filteredItems = useMemo(() => {
@@ -31,14 +41,26 @@ export function FlashcardMode() {
       items = words.filter(w => w.type === 'word');
     } else if (filterType === 'sentences') {
       items = words.filter(w => w.type === 'sentence');
-    } else if (filterType === 'day') {
-      items = words.filter(w => w.day === selectedDay);
+    } else if (filterType === 'category') {
+      items = words.filter(w => w.category === selectedCategory);
     } else if (filterType === 'needsReview') {
       items = words.filter(w => w.needsReview);
+    } else if (filterType === 'random') {
+      items = words;
     }
 
-    return items;
-  }, [words, filterType, selectedDay]);
+    // Shuffle for random order
+    const shuffled = [...items].sort(() => Math.random() - 0.5);
+
+    // Apply limit for random or category/all modes
+    if (filterType === 'random') {
+      return shuffled.slice(0, randomCount);
+    } else if (filterType === 'category' || filterType === 'all') {
+      return shuffled.slice(0, limitCount);
+    }
+
+    return shuffled;
+  }, [words, filterType, selectedCategory, randomCount, limitCount]);
 
   // Determine actual direction for current card
   const currentDirection = useMemo(() => {
@@ -103,7 +125,7 @@ export function FlashcardMode() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 Select Content
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
                 <Button
                   variant={filterType === 'all' ? 'primary' : 'secondary'}
                   onClick={() => setFilterType('all')}
@@ -125,12 +147,21 @@ export function FlashcardMode() {
                 >
                   Sentences
                 </Button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <Button
-                  variant={filterType === 'day' ? 'primary' : 'secondary'}
-                  onClick={() => setFilterType('day')}
+                  variant={filterType === 'category' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('category')}
                   className="w-full"
                 >
-                  By Day
+                  By Category
+                </Button>
+                <Button
+                  variant={filterType === 'random' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('random')}
+                  className="w-full"
+                >
+                  Random
                 </Button>
                 <Button
                   variant={filterType === 'needsReview' ? 'primary' : 'secondary'}
@@ -142,22 +173,62 @@ export function FlashcardMode() {
               </div>
             </div>
 
-            {filterType === 'day' && (
+            {filterType === 'category' && (
               <div>
-                <label htmlFor="day-select" className="block text-sm font-medium text-text-primary mb-2">
-                  Day
+                <label htmlFor="category-select" className="block text-sm font-medium text-text-primary mb-2">
+                  Category
                 </label>
                 <Select
-                  id="day-select"
-                  value={selectedDay.toString()}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  id="category-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  {availableDays.map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
+                  {availableCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
                     </option>
                   ))}
                 </Select>
+              </div>
+            )}
+
+            {filterType === 'random' && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Number of Cards: {randomCount}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={randomCount}
+                  onChange={(e) => setRandomCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
+              </div>
+            )}
+
+            {(filterType === 'category' || filterType === 'all' || filterType === 'words' || filterType === 'sentences') && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Limit to: {limitCount} cards
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={limitCount}
+                  onChange={(e) => setLimitCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
               </div>
             )}
 

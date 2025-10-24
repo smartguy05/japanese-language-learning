@@ -8,7 +8,7 @@ export interface Word {
   english: string; // English translation
 
   // Organization
-  day: number; // Which day this was added (1-indexed)
+  category: string; // Category for grouping (e.g., "Greetings", "Food")
   type: 'word' | 'sentence'; // For filtering and display
 
   // Learning Progress

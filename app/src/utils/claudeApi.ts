@@ -6,7 +6,7 @@ interface GenerateWordsParams {
   difficulty: number; // 1-5 scale
   type: 'word' | 'sentence';
   existingWords: Word[];
-  currentDay: number;
+  currentCategory: string;
   model?: string;
 }
 
@@ -67,7 +67,7 @@ export async function fetchAnthropicModels(apiKey: string): Promise<AnthropicMod
 }
 
 export async function generateWordsWithClaude(params: GenerateWordsParams): Promise<Omit<Word, 'id' | 'createdAt'>[]> {
-  const { apiKey, count, difficulty, type, existingWords, currentDay, model = 'claude-sonnet-4-20250514' } = params;
+  const { apiKey, count, difficulty, type, existingWords, currentCategory, model = 'claude-sonnet-4-20250514' } = params;
 
   // Build context from existing words to avoid duplicates
   const existingJapanese = existingWords.map(w => w.japanese).join(', ');
@@ -168,7 +168,7 @@ Example format:
       japanese: item.japanese,
       romanji: item.romanji,
       english: item.english,
-      day: currentDay,
+      category: currentCategory,
       type,
       mastered: false,
       needsReview: false,

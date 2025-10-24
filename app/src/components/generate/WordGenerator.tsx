@@ -7,34 +7,32 @@ import type { Word } from '../../types/word';
 
 interface WordGeneratorProps {
   type: 'word' | 'sentence';
-  currentDay: number;
+  currentCategory: string;
 }
 
-export function WordGenerator({ type }: WordGeneratorProps) {
+export function WordGenerator({ type, currentCategory }: WordGeneratorProps) {
   const { settings } = useSettings();
   const { words, bulkAddWords } = useWords();
 
-  // Calculate available days and next day
-  const { availableDays, nextDay } = useMemo(() => {
-    const days = Array.from(new Set(words.map(w => w.day))).sort((a, b) => a - b);
-    const maxDay = days.length > 0 ? Math.max(...days) : 0;
-    return {
-      availableDays: days,
-      nextDay: maxDay + 1
-    };
+  // Calculate available categories
+  const availableCategories = useMemo(() => {
+    const categories = Array.from(new Set(words.map(w => w.category))).sort();
+    return categories.length > 0 ? categories : ['Greetings'];
   }, [words]);
 
   const [count, setCount] = useState(5);
   const [difficulty, setDifficulty] = useState(3);
-  const [selectedDay, setSelectedDay] = useState(nextDay);
+  const [selectedCategory, setSelectedCategory] = useState(currentCategory || 'Greetings');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Update selectedDay when nextDay changes
+  // Update selectedCategory when currentCategory changes
   useMemo(() => {
-    setSelectedDay(nextDay);
-  }, [nextDay]);
+    if (currentCategory) {
+      setSelectedCategory(currentCategory);
+    }
+  }, [currentCategory]);
 
   const difficultyLabels = [
     'Absolute Beginner',
@@ -61,12 +59,12 @@ export function WordGenerator({ type }: WordGeneratorProps) {
         difficulty,
         type,
         existingWords: words,
-        currentDay: selectedDay,
+        currentCategory: selectedCategory,
         model: settings.claudeModel || undefined,
       });
 
       bulkAddWords(generatedWords as Word[]);
-      setSuccessMessage(`Successfully generated ${generatedWords.length} ${type}${generatedWords.length !== 1 ? 's' : ''} for Day ${selectedDay}!`);
+      setSuccessMessage(`Successfully generated ${generatedWords.length} ${type}${generatedWords.length !== 1 ? 's' : ''} for category "${selectedCategory}"!`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate words');
     } finally {
@@ -81,31 +79,23 @@ export function WordGenerator({ type }: WordGeneratorProps) {
       </h2>
 
       <div className="space-y-4">
-        {/* Day Selection */}
+        {/* Category Selection */}
         <div>
           <label className="block text-text-primary font-medium mb-2">
-            Add to Day
+            Category
           </label>
           <Select
-            value={selectedDay.toString()}
-            onChange={(e) => setSelectedDay(Number(e.target.value))}
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <option value={nextDay.toString()}>Day {nextDay} (New Day)</option>
-            {availableDays.length > 0 && (
-              <optgroup label="Existing Days">
-                {availableDays.map(day => (
-                  <option key={day} value={day.toString()}>
-                    Day {day}
-                  </option>
-                ))}
-              </optgroup>
-            )}
+            {availableCategories.map(category => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </Select>
           <p className="text-xs text-text-secondary mt-1">
-            {selectedDay === nextDay
-              ? 'Generated items will be added to a new day'
-              : `Generated items will be added to existing Day ${selectedDay}`
-            }
+            Generated items will be added to the "{selectedCategory}" category
           </p>
         </div>
 

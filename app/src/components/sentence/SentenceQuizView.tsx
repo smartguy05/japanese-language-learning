@@ -91,8 +91,27 @@ export function SentenceQuizView({
   const currentScore = score.correct + score.incorrect;
   const accuracy = currentScore > 0 ? Math.round((score.correct / currentScore) * 100) : 0;
 
-  if (!currentQuestion) {
-    return null;
+  // If no questions available, show completion message
+  if (!currentQuestion || quizQuestions.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 md:p-6">
+        <Card variant="elevated" padding="large">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-text-primary mb-4">Quiz Complete!</h2>
+            <p className="text-text-secondary mb-6">
+              You've completed all available sentences. Great work!
+            </p>
+            <div className="mb-6">
+              <p className="text-sm text-text-tertiary mb-1">Final Score</p>
+              <p className="text-4xl font-bold text-text-primary">{accuracy}%</p>
+            </div>
+            <Button onClick={() => onComplete({ correct: score.correct, total: score.correct + score.incorrect })} variant="primary">
+              View Results
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (

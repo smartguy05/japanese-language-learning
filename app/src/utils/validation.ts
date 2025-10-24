@@ -15,8 +15,8 @@ export function validateWord(word: unknown): word is Word {
     w.romanji.length > 0 &&
     typeof w.english === 'string' &&
     w.english.length > 0 &&
-    typeof w.day === 'number' &&
-    w.day > 0 &&
+    typeof w.category === 'string' &&
+    w.category.length > 0 &&
     (w.type === 'word' || w.type === 'sentence') &&
     typeof w.mastered === 'boolean' &&
     typeof w.needsReview === 'boolean' &&
@@ -57,6 +57,6 @@ export function sanitizeInput(input: string): string {
   return input.trim();
 }
 
-export function validateDayNumber(day: number): boolean {
-  return Number.isInteger(day) && day > 0 && day < 1000;
+export function validateCategory(category: string): boolean {
+  return typeof category === 'string' && category.trim().length > 0;
 }

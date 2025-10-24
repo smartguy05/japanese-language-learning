@@ -32,7 +32,7 @@ export function WordListItem({ word, onEdit, onDelete }: WordListItemProps) {
           {/* Metadata */}
           <div className="flex flex-wrap gap-2 mt-3">
             <span className="px-2 py-1 text-xs rounded-full bg-indigo bg-opacity-20 text-indigo">
-              Day {word.day}
+              {word.category}
             </span>
             <span className={`px-2 py-1 text-xs rounded-full ${
               word.type === 'word'

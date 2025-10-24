@@ -13,7 +13,7 @@ export function WordForm({ word, onSubmit, onCancel }: WordFormProps) {
     japanese: word?.japanese || '',
     romanji: word?.romanji || '',
     english: word?.english || '',
-    day: word?.day || 1,
+    category: word?.category || 'Greetings',
     type: word?.type || 'word' as 'word' | 'sentence',
     mastered: word?.mastered || false,
     needsReview: word?.needsReview || false,
@@ -37,8 +37,8 @@ export function WordForm({ word, onSubmit, onCancel }: WordFormProps) {
     if (!formData.english.trim()) {
       newErrors.english = 'English translation is required';
     }
-    if (formData.day < 1) {
-      newErrors.day = 'Day must be at least 1';
+    if (!formData.category.trim()) {
+      newErrors.category = 'Category is required';
     }
 
     setErrors(newErrors);
@@ -112,21 +112,14 @@ export function WordForm({ word, onSubmit, onCancel }: WordFormProps) {
           placeholder={formData.type === 'word' ? 'hello' : "It's nice weather today"}
         />
 
-        {/* Day input */}
-        <div>
-          <label htmlFor="day-input" className="block text-sm font-medium text-text-primary mb-2">
-            Day
-          </label>
-          <input
-            id="day-input"
-            type="number"
-            min="1"
-            value={formData.day}
-            onChange={(e) => setFormData({ ...formData, day: parseInt(e.target.value) || 1 })}
-            className="w-full px-4 py-2 min-h-[48px] rounded-lg bg-bg-tertiary dark:bg-bg-tertiary-dark text-text-primary border border-border-medium focus:outline-none focus:ring-2 focus:ring-indigo focus:border-transparent transition-colors"
-          />
-          {errors.day && <p className="mt-1 text-sm text-error">{errors.day}</p>}
-        </div>
+        {/* Category input */}
+        <Input
+          label="Category"
+          value={formData.category}
+          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          error={errors.category}
+          placeholder="e.g., Greetings, Food & Dining, Numbers & Time"
+        />
 
         {/* Flags */}
         <div className="flex gap-4">

@@ -78,8 +78,23 @@ export function AlphabetQuizView({ words, onComplete, onBackToStudy }: AlphabetQ
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentIndex, words.length, allRevealed]);
 
-  if (!currentWord) {
-    return null;
+  // If no words available (all filtered out after mastering), show completion message
+  if (!currentWord || words.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-4 md:p-6">
+        <Card variant="elevated" padding="large">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-text-primary mb-4">Great job!</h2>
+            <p className="text-text-secondary mb-6">
+              You've completed all available words. Words marked as mastered appear less frequently.
+            </p>
+            <Button onClick={onComplete} variant="primary">
+              Back to Selection
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   return (

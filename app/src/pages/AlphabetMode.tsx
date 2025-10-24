@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useWords } from '../contexts/WordContext';
-import { useProgress } from '../contexts/ProgressContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { Card, Button, Select } from '../components/common';
 import { AlphabetStudyView } from '../components/alphabet/AlphabetStudyView';
@@ -8,23 +7,34 @@ import { AlphabetQuizView } from '../components/alphabet/AlphabetQuizView';
 import { WordGenerator } from '../components/generate';
 
 type View = 'selection' | 'study' | 'quiz';
-type FilterType = 'all' | 'day' | 'needsReview';
+type FilterType = 'all' | 'category' | 'needsReview' | 'random';
 
 export function AlphabetMode() {
   const { words } = useWords();
-  const { progress } = useProgress();
   const { hasApiKey } = useSettings();
 
   const [view, setView] = useState<View>('selection');
-  const [filterType, setFilterType] = useState<FilterType>('day');
-  const [selectedDay, setSelectedDay] = useState(progress.currentDay);
+  const [filterType, setFilterType] = useState<FilterType>('category');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [includeSentences, setIncludeSentences] = useState(false);
+  const [randomCount, setRandomCount] = useState(10);
+  const [limitCount, setLimitCount] = useState(10);
 
-  // Get unique days from words
-  const availableDays = useMemo(() => {
-    const days = Array.from(new Set(words.filter(w => w.type === 'word').map(w => w.day))).sort((a, b) => a - b);
-    return days.length > 0 ? days : [1]; // Default to day 1 if no words
+  // Get unique categories from words
+  const availableCategories = useMemo(() => {
+    const categories = Array.from(new Set(words.filter(w => w.type === 'word').map(w => w.category))).sort();
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0]);
+    }
+    return categories.length > 0 ? categories : ['Greetings'];
   }, [words]);
+
+  // Initialize selectedCategory when availableCategories change
+  useMemo(() => {
+    if (availableCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(availableCategories[0]);
+    }
+  }, [availableCategories, selectedCategory]);
 
   // Filter words based on selection
   const filteredWords = useMemo(() => {
@@ -36,10 +46,12 @@ export function AlphabetMode() {
     let filtered;
     if (filterType === 'all') {
       filtered = typeFilter;
-    } else if (filterType === 'day') {
-      filtered = typeFilter.filter(w => w.day === selectedDay);
+    } else if (filterType === 'category') {
+      filtered = typeFilter.filter(w => w.category === selectedCategory);
     } else if (filterType === 'needsReview') {
       filtered = typeFilter.filter(w => w.needsReview);
+    } else if (filterType === 'random') {
+      filtered = typeFilter;
     } else {
       filtered = typeFilter;
     }
@@ -60,12 +72,28 @@ export function AlphabetMode() {
 
     // Ensure we have at least some words - if weighted selection filtered too much, add some mastered words back
     if (weighted.length === 0 && filtered.length > 0) {
-      return [...filtered].sort(() => Math.random() - 0.5);
+      const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+      // Apply limit for random or category modes
+      if (filterType === 'random') {
+        return shuffled.slice(0, randomCount);
+      } else if (filterType === 'category' || filterType === 'all') {
+        return shuffled.slice(0, limitCount);
+      }
+      return shuffled;
     }
 
     // Shuffle the weighted selection for random order
-    return [...weighted].sort(() => Math.random() - 0.5);
-  }, [words, filterType, selectedDay, includeSentences]);
+    const shuffled = [...weighted].sort(() => Math.random() - 0.5);
+
+    // Apply limit for random or category modes
+    if (filterType === 'random') {
+      return shuffled.slice(0, randomCount);
+    } else if (filterType === 'category' || filterType === 'all') {
+      return shuffled.slice(0, limitCount);
+    }
+
+    return shuffled;
+  }, [words, filterType, selectedCategory, includeSentences, randomCount, limitCount]);
 
   const handleStartStudy = () => {
     setView('study');
@@ -89,7 +117,7 @@ export function AlphabetMode() {
       <div className="max-w-4xl mx-auto p-4 md:p-6">
         {/* Word Generator - Only visible if API key is set */}
         {hasApiKey && (
-          <WordGenerator type="word" currentDay={selectedDay} />
+          <WordGenerator type="word" currentCategory={selectedCategory} />
         )}
 
         <Card variant="elevated" padding="large">
@@ -104,13 +132,13 @@ export function AlphabetMode() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 Select Words
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Button
-                  variant={filterType === 'day' ? 'primary' : 'secondary'}
-                  onClick={() => setFilterType('day')}
+                  variant={filterType === 'category' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('category')}
                   className="w-full"
                 >
-                  By Day
+                  By Category
                 </Button>
                 <Button
                   variant={filterType === 'all' ? 'primary' : 'secondary'}
@@ -118,6 +146,13 @@ export function AlphabetMode() {
                   className="w-full"
                 >
                   All Words
+                </Button>
+                <Button
+                  variant={filterType === 'random' ? 'primary' : 'secondary'}
+                  onClick={() => setFilterType('random')}
+                  className="w-full"
+                >
+                  Random
                 </Button>
                 <Button
                   variant={filterType === 'needsReview' ? 'primary' : 'secondary'}
@@ -129,22 +164,62 @@ export function AlphabetMode() {
               </div>
             </div>
 
-            {filterType === 'day' && (
+            {filterType === 'category' && (
               <div>
-                <label htmlFor="day-select" className="block text-sm font-medium text-text-primary mb-2">
-                  Day
+                <label htmlFor="category-select" className="block text-sm font-medium text-text-primary mb-2">
+                  Category
                 </label>
                 <Select
-                  id="day-select"
-                  value={selectedDay.toString()}
-                  onChange={(e) => setSelectedDay(Number(e.target.value))}
+                  id="category-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
                 >
-                  {availableDays.map((day) => (
-                    <option key={day} value={day}>
-                      Day {day}
+                  {availableCategories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
                     </option>
                   ))}
                 </Select>
+              </div>
+            )}
+
+            {filterType === 'random' && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Number of Words: {randomCount}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={randomCount}
+                  onChange={(e) => setRandomCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
+              </div>
+            )}
+
+            {(filterType === 'category' || filterType === 'all') && (
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Limit to: {limitCount} words
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  value={limitCount}
+                  onChange={(e) => setLimitCount(Number(e.target.value))}
+                  className="w-full h-2 bg-bg-tertiary dark:bg-bg-tertiary-dark rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <div className="flex justify-between text-xs text-text-secondary mt-1">
+                  <span>1</span>
+                  <span>50</span>
+                </div>
               </div>
             )}
 

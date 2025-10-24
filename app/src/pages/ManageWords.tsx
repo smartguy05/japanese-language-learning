@@ -41,21 +41,21 @@ export function ManageWords() {
       );
     }
 
-    // Sort by day, then by creation date
+    // Sort by category, then by creation date
     return filtered.sort((a, b) => {
-      if (a.day !== b.day) return a.day - b.day;
+      if (a.category !== b.category) return a.category.localeCompare(b.category);
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   }, [words, filterType, searchQuery]);
 
-  // Group by day
+  // Group by category
   const groupedWords = useMemo(() => {
-    const groups: Record<number, Word[]> = {};
+    const groups: Record<string, Word[]> = {};
     filteredWords.forEach(word => {
-      if (!groups[word.day]) {
-        groups[word.day] = [];
+      if (!groups[word.category]) {
+        groups[word.category] = [];
       }
-      groups[word.day].push(word);
+      groups[word.category].push(word);
     });
     return groups;
   }, [filteredWords]);
@@ -152,15 +152,14 @@ export function ManageWords() {
       ) : (
         <div className="space-y-6">
           {Object.keys(groupedWords)
-            .map(Number)
-            .sort((a, b) => a - b)
-            .map(day => (
-              <div key={day}>
+            .sort()
+            .map(category => (
+              <div key={category}>
                 <h2 className="text-lg font-semibold text-text-primary mb-3 sticky top-0 bg-bg-primary dark:bg-bg-primary-dark py-2 z-10">
-                  Day {day} ({groupedWords[day].length} item{groupedWords[day].length !== 1 ? 's' : ''})
+                  {category} ({groupedWords[category].length} item{groupedWords[category].length !== 1 ? 's' : ''})
                 </h2>
                 <div className="space-y-3">
-                  {groupedWords[day].map(word => (
+                  {groupedWords[category].map(word => (
                     <WordListItem
                       key={word.id}
                       word={word}
