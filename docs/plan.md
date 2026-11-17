@@ -901,7 +901,32 @@ A feature is complete when:
 
 ## Post-MVP Roadmap (Optional Future Enhancements)
 
-### Phase 7: Advanced Features (Weeks 4-6)
+### Phase 7: Google Drive Sync (Days 22-25 / Week 4)
+**Optional feature for cross-device data synchronization**
+
+**Objective:** Enable automatic synchronization of user data to Google Drive for cross-device usage while maintaining offline-first functionality.
+
+**Duration:** 3-4 days (26-32 hours)
+
+**Key Features:**
+- OAuth 2.0 authentication with Google
+- Automatic sync on data changes (word creation, settings, quiz completion)
+- Last-write-wins conflict resolution
+- Offline queue with connectivity polling
+- Complete opt-in system with privacy controls
+
+**Deliverables:**
+- GoogleDriveService with OAuth and Drive API integration
+- SyncEngine with auto-sync and offline handling
+- SyncContext for app-wide sync state management
+- Settings UI with connect/disconnect controls
+- Privacy modal explaining data storage
+
+**See:** `docs/google-drive-sync.md` for complete technical specification and `docs/tasks-google-drive-sync.md` for detailed task breakdown.
+
+---
+
+### Phase 8: Advanced Features (Weeks 5-6)
 **Not included in initial MVP, documented for future reference**
 
 #### Spaced Repetition System (SRS)
@@ -925,7 +950,7 @@ A feature is complete when:
 - Import curated word lists
 - Leaderboards (requires backend)
 
-### Phase 8: International Expansion (Future)
+### Phase 9: International Expansion (Future)
 - Kanji learning mode
 - Grammar explanations
 - Multi-language support (UI in Spanish, French, etc.)

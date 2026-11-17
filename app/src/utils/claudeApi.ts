@@ -1,5 +1,7 @@
 import type { Word } from '../types/word';
 
+type CharacterType = 'both' | 'hiragana' | 'katakana';
+
 interface GenerateWordsParams {
   apiKey: string;
   count: number;
@@ -8,6 +10,7 @@ interface GenerateWordsParams {
   existingWords: Word[];
   currentDay: number;
   model?: string;
+  characterType?: CharacterType;
 }
 
 interface ClaudeResponse {
@@ -67,7 +70,7 @@ export async function fetchAnthropicModels(apiKey: string): Promise<AnthropicMod
 }
 
 export async function generateWordsWithClaude(params: GenerateWordsParams): Promise<Omit<Word, 'id' | 'createdAt'>[]> {
-  const { apiKey, count, difficulty, type, existingWords, currentDay, model = 'claude-sonnet-4-20250514' } = params;
+  const { apiKey, count, difficulty, type, existingWords, currentDay, model = 'claude-sonnet-4-20250514', characterType = 'both' } = params;
 
   // Build context from existing words to avoid duplicates
   const existingJapanese = existingWords.map(w => w.japanese).join(', ');
@@ -82,11 +85,19 @@ export async function generateWordsWithClaude(params: GenerateWordsParams): Prom
 
   const difficultyLevel = difficultyDescriptions[difficulty - 1] || difficultyDescriptions[2];
 
+  // Determine character type instruction
+  let characterTypeInstruction = 'Use ONLY hiragana (ひらがな) or katakana (カタカナ) - NO kanji';
+  if (characterType === 'hiragana') {
+    characterTypeInstruction = 'Use ONLY hiragana (ひらがな) - NO katakana or kanji';
+  } else if (characterType === 'katakana') {
+    characterTypeInstruction = 'Use ONLY katakana (カタカナ) - NO hiragana or kanji';
+  }
+
   const prompt = type === 'word'
     ? `Generate ${count} Japanese ${type}s suitable for ${difficultyLevel} learners.
 
 IMPORTANT RULES:
-- Use ONLY hiragana (ひらがな) or katakana (カタカナ) - NO kanji
+- ${characterTypeInstruction}
 - Each word should be practical and commonly used
 - Avoid duplicating these existing words: ${existingJapanese || 'none yet'}
 - Provide accurate romanji (romaji) transliteration
@@ -95,7 +106,7 @@ IMPORTANT RULES:
 Return ONLY a JSON array with this exact format, no other text:
 [
   {
-    "japanese": "ひらがな or カタカナ only",
+    "japanese": "${characterType === 'hiragana' ? 'ひらがな only' : characterType === 'katakana' ? 'カタカナ only' : 'ひらがな or カタカナ only'}",
     "romanji": "accurate romaji",
     "english": "clear English translation"
   }
@@ -109,7 +120,7 @@ Example format:
     : `Generate ${count} Japanese ${type}s suitable for ${difficultyLevel} learners.
 
 IMPORTANT RULES:
-- Use ONLY hiragana (ひらがな) or katakana (カタカナ) - NO kanji
+- ${characterTypeInstruction}
 - Sentences should be natural and practical
 - Avoid duplicating these existing sentences: ${existingJapanese || 'none yet'}
 - Provide accurate romanji (romaji) transliteration
@@ -118,7 +129,7 @@ IMPORTANT RULES:
 Return ONLY a JSON array with this exact format, no other text:
 [
   {
-    "japanese": "ひらがな or カタカナ sentence",
+    "japanese": "${characterType === 'hiragana' ? 'ひらがな sentence' : characterType === 'katakana' ? 'カタカナ sentence' : 'ひらがな or カタカナ sentence'}",
     "romanji": "accurate romaji",
     "english": "clear English translation"
   }

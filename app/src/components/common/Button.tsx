@@ -22,8 +22,8 @@ export function Button({
 
   const variantStyles = {
     primary: 'bg-indigo text-white hover:opacity-90 focus:ring-indigo',
-    secondary: 'bg-bg-tertiary-dark dark:bg-bg-tertiary-dark text-text-primary border border-border-medium hover:bg-opacity-80 focus:ring-indigo',
-    ghost: 'bg-transparent text-text-secondary hover:bg-bg-tertiary-dark hover:text-text-primary focus:ring-indigo',
+    secondary: 'bg-bg-tertiary-light dark:bg-bg-tertiary-dark text-text-primary border border-border-medium hover:bg-opacity-80 focus:ring-indigo',
+    ghost: 'bg-transparent text-text-secondary hover:bg-bg-tertiary-light dark:hover:bg-bg-tertiary-dark hover:text-text-primary focus:ring-indigo',
   };
 
   const sizeStyles = {

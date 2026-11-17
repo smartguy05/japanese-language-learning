@@ -16,6 +16,7 @@ export const DEFAULT_SETTINGS = {
   lastModelsFetch: null,
   lastExportDate: null,
   dataVersion: '1.0',
+  lastModified: Date.now(),
 };
 
 export const DEFAULT_PROGRESS = {
@@ -26,11 +27,12 @@ export const DEFAULT_PROGRESS = {
   wordsNeedingReview: 0,
   currentDay: 1,
   sessionScore: {
-    alphabetMode: { correct: 0, incorrect: 0 },
+    wordMode: { correct: 0, incorrect: 0 },
     sentenceMode: { correct: 0, incorrect: 0 },
     flashcardMode: { correct: 0, incorrect: 0 },
   },
   dailyStreak: 0,
   lastStudyDate: new Date().toISOString(),
   totalStudyTime: 0,
+  lastModified: Date.now(),
 };

@@ -21,6 +21,7 @@ export function WordForm({ word, onSubmit, onCancel }: WordFormProps) {
     correctCount: word?.correctCount || 0,
     incorrectCount: word?.incorrectCount || 0,
     lastReviewed: word?.lastReviewed || new Date().toISOString(),
+    lastModified: word?.lastModified || Date.now(),
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

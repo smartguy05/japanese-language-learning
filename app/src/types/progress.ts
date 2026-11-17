@@ -1,4 +1,4 @@
-export type Mode = 'alphabet' | 'sentence' | 'flashcard';
+export type Mode = 'word' | 'sentence' | 'flashcard';
 
 export interface UserProgress {
   // Overall Statistics
@@ -11,7 +11,7 @@ export interface UserProgress {
   // Current Session
   currentDay: number; // Active day being studied
   sessionScore: {
-    alphabetMode: { correct: number; incorrect: number };
+    wordMode: { correct: number; incorrect: number };
     sentenceMode: { correct: number; incorrect: number };
     flashcardMode: { correct: number; incorrect: number };
   };
@@ -20,4 +20,7 @@ export interface UserProgress {
   dailyStreak: number;
   lastStudyDate: string; // ISO 8601
   totalStudyTime: number; // Minutes (future enhancement)
+
+  // Sync metadata
+  lastModified: number; // Unix timestamp (ms) for sync conflict resolution
 }
